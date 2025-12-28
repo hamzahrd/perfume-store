@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,700&family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -43,83 +44,110 @@
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
+  --primary: var(--color-amber-700);
+  --primary-foreground: var(--color-amber-50);
+  --sidebar-primary: var(--color-amber-600);
+  --sidebar-primary-foreground: var(--color-amber-50);
+  --chart-1: var(--color-amber-300);
+  --chart-2: var(--color-amber-500);
+  --chart-3: var(--color-amber-600);
+  --chart-4: var(--color-amber-700);
+  --chart-5: var(--color-amber-800);
+  --radius: 0.25rem;
+  --background: oklch(0.96 0.01 60);
+  --foreground: oklch(0.25 0.04 30);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
+  --card-foreground: oklch(0.25 0.04 30);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
+  --popover-foreground: oklch(0.25 0.04 30);
+  --secondary: oklch(0.95 0.01 60);
+  --secondary-foreground: oklch(0.35 0.04 30);
+  --muted: oklch(0.85 0.01 60);
+  --muted-foreground: oklch(0.45 0.03 30);
+  --accent: oklch(0.55 0.15 30);
+  --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  --border: oklch(0.92 0.01 60);
+  --input: oklch(0.92 0.01 60);
+  --ring: oklch(0.55 0.15 30);
+  --sidebar: oklch(0.96 0.01 60);
+  --sidebar-foreground: oklch(0.25 0.04 30);
+  --sidebar-accent: oklch(0.85 0.01 60);
+  --sidebar-accent-foreground: oklch(0.25 0.04 30);
+  --sidebar-border: oklch(0.92 0.01 60);
+  --sidebar-ring: oklch(0.55 0.15 30);
 }
 
 .dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
+  --primary: var(--color-amber-600);
+  --primary-foreground: var(--color-amber-50);
+  --sidebar-primary: var(--color-amber-500);
+  --sidebar-primary-foreground: var(--color-amber-50);
+  --background: oklch(0.2 0.02 30);
+  --foreground: oklch(0.95 0.01 60);
+  --card: oklch(0.25 0.02 30);
+  --card-foreground: oklch(0.95 0.01 60);
+  --popover: oklch(0.25 0.02 30);
+  --popover-foreground: oklch(0.95 0.01 60);
+  --secondary: oklch(0.3 0.02 30);
+  --secondary-foreground: oklch(0.85 0.01 60);
+  --muted: oklch(0.4 0.02 30);
+  --muted-foreground: oklch(0.7 0.01 60);
+  --accent: oklch(0.65 0.12 30);
+  --accent-foreground: oklch(0.2 0.02 30);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
+  --ring: oklch(0.65 0.12 30);
+  --chart-1: var(--color-amber-300);
+  --chart-2: var(--color-amber-500);
+  --chart-3: var(--color-amber-600);
+  --chart-4: var(--color-amber-700);
+  --chart-5: var(--color-amber-800);
+  --sidebar: oklch(0.25 0.02 30);
+  --sidebar-foreground: oklch(0.95 0.01 60);
+  --sidebar-accent: oklch(0.4 0.02 30);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+  --sidebar-ring: oklch(0.65 0.12 30);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'Lora', serif;
   }
+
+  h1 {
+    font-family: 'Bodoni Moda', serif;
+    @apply text-5xl md:text-7xl font-bold tracking-tight leading-tight;
+  }
+
+  h2 {
+    font-family: 'Lora', serif;
+    @apply text-3xl md:text-4xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    font-family: 'Lora', serif;
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  h4 {
+    font-family: 'Lora', serif;
+    @apply text-xl font-semibold;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -134,24 +162,11 @@
 }
 
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
 
@@ -160,18 +175,69 @@
     min-width: 0;
   }
 
+  /* Magazine-style divider */
+  .divider-horizontal {
+    @apply h-px bg-foreground/20;
+  }
+
+  .divider-section {
+    @apply py-12 md:py-16 lg:py-20;
+  }
+
+  /* Elegant button styles */
+  .btn-elegant {
+    @apply px-6 py-3 border border-foreground/40 hover:border-foreground/70 hover:bg-foreground/5 transition-all duration-300;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .btn-elegant-filled {
+    @apply px-6 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors duration-300;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .btn-elegant-outline {
+    @apply px-4 py-2 border border-foreground/30 hover:border-foreground/60 transition-colors duration-300;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.03em;
+    font-size: 0.8125rem;
+  }
+
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .tracking-wide-editorial {
+    letter-spacing: 0.1em;
+  }
+
+  .space-x-fine {
+    @apply space-x-1;
+  }
+
+  .space-y-fine {
+    @apply space-y-1;
   }
 }
