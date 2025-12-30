@@ -149,8 +149,8 @@ export const appRouter = router({
           category: z.string().min(1),
           price: z.number().min(0),
           discountPrice: z.number().min(0).nullable().optional(),
-          imageUrl: z.string().url(),
-          imageGallery: z.array(z.string()).optional(), // Add support for image gallery
+          imageUrl: z.string().min(1), // Changed from .url() to allow relative paths
+          imageGallery: z.array(z.string().min(1)).optional(), // Add support for image gallery
           sizes: z.array(z.string()),
           topNotes: z.string().optional(),
           heartNotes: z.string().optional(),

@@ -2,7 +2,7 @@
 # Dependencies
 node_modules/
 
-# Environment
+# Environment variables
 .env
 .env.local
 .env.*
@@ -10,54 +10,48 @@ node_modules/
 # Logs
 *.log
 
-# Coverage
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
 
-# Python
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage*
-.nox/
-.pytest_cache/
-.mypy_cache/
-
-# TypeScript/JavaScript
-*.tsbuildinfo
-*.js.map
-*.jsx.map
-*.ts.map
+*.so
 
 # Build outputs
 dist/
 build/
-target/
-out/
-bundle.js
-bundle.js.map
+*.out
+*.exe
+*.dll
+*.so
+*.dylib
 
-# Editors
-.vscode/
-.idea/
+# Temporary files
+*.tmp
 *.swp
 *.swo
-*~
 
-# OS
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Compression
+# IDE specific
+.vscode/
+.idea/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.nyc_output/
+coverage/
+
+# Compressed files
 *.zip
 *.gz
 *.tar

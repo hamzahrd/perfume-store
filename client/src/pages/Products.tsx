@@ -184,8 +184,21 @@ export default function Products() {
                 {filteredProducts.map((product: any) => (
                   <Link key={product.id} href={`/product/${product.id}`}>
                     <a className="group">
-                      <div className="mb-4 aspect-square bg-card border border-foreground/10 flex items-center justify-center text-5xl group-hover:bg-foreground/5 transition-colors">
-                        🧴
+                      <div className="mb-4 aspect-square bg-card border border-foreground/10 flex items-center justify-center">
+                        {product.imageUrl ? (
+                          <img 
+                            src={product.imageUrl} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.parentElement!.innerHTML = '<div class="text-5xl">🧴</div>';
+                            }}
+                          />
+                        ) : (
+                          <div className="text-5xl">🧴</div>
+                        )}
                       </div>
                       <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">
                         {product.name}

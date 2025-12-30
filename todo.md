@@ -83,7 +83,7 @@
 ## Admin Panel
 - [x] Admin dashboard overview
 - [x] Product management (CRUD)
-- [x] Product image upload
+- [x] Product image upload with gallery management
 - [ ] Category management
 - [x] Order management interface
 - [x] Order status updates
