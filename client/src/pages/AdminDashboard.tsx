@@ -19,6 +19,7 @@ export default function AdminDashboard() {
     price: 0,
     discountPrice: null as number | null,
     imageUrl: "",
+    imageGallery: [] as string[], // Add image gallery
     sizes: ["30ml", "50ml", "100ml"],
     topNotes: "",
     heartNotes: "",
@@ -44,6 +45,7 @@ export default function AdminDashboard() {
         price: 0,
         discountPrice: null,
         imageUrl: "",
+        imageGallery: [], // Reset image gallery
         sizes: ["30ml", "50ml", "100ml"],
         topNotes: "",
         heartNotes: "",
@@ -60,9 +62,23 @@ export default function AdminDashboard() {
   const handleImageUpload = async (file: File) => {
     if (!file) return;
 
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please upload a valid image file (JPEG, PNG, GIF, or WebP)");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error("File size exceeds 5MB limit");
+      return;
+    }
+
     setIsUploadingImage(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const formData = new FormData();
       
       const reader = new FileReader();
@@ -98,6 +114,69 @@ export default function AdminDashboard() {
       toast.error("Failed to upload image");
       setIsUploadingImage(false);
     }
+  };
+
+  const handleMultipleImageUpload = async (files: File[]) => {
+    if (!files || files.length === 0) return;
+
+    for (const file of files) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`File ${file.name} is not a valid image`);
+        continue;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error(`File ${file.name} exceeds 5MB limit`);
+        continue;
+      }
+
+      try {
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const blob = e.target?.result as ArrayBuffer;
+            const response = await fetch("/api/upload/upload", {
+              method: "POST",
+              headers: {
+                "x-file-ext": ext,
+              },
+              body: blob,
+            });
+
+            if (!response.ok) throw new Error("Upload failed");
+            
+            const data = await response.json();
+            if (data.success) {
+              // Add to image gallery
+              setProductForm(prev => ({
+                ...prev,
+                imageGallery: [...prev.imageGallery, data.url]
+              }));
+              toast.success("Gallery image uploaded successfully!");
+            } else {
+              throw new Error(data.error || "Upload failed");
+            }
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Upload failed");
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (error) {
+        toast.error(`Failed to upload ${file.name}`);
+      }
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setProductForm(prev => ({
+      ...prev,
+      imageGallery: prev.imageGallery.filter((_, i) => i !== index)
+    }));
   };
 
   // Check if user is admin
@@ -225,6 +304,7 @@ export default function AdminDashboard() {
                       price: Number(productForm.price),
                       discountPrice: productForm.discountPrice ? Number(productForm.discountPrice) : null,
                       stock: Number(productForm.stock),
+                      imageGallery: productForm.imageGallery, // Include image gallery
                     });
                   }}
                   className="space-y-6 max-w-2xl">
@@ -296,7 +376,7 @@ export default function AdminDashboard() {
                         <label className="block w-full px-4 py-3 border border-foreground/20 bg-background cursor-pointer hover:border-accent transition-colors text-center">
                           <div className="flex items-center justify-center gap-2">
                             <Upload className="w-4 h-4" />
-                            Choose Image
+                            Choose Main Image
                           </div>
                           <input
                             type="file"
@@ -327,6 +407,57 @@ export default function AdminDashboard() {
                     )}
                     {productForm.imageUrl && !isUploadingImage && (
                       <p className="text-sm text-green-500 mt-2">Image uploaded ✓</p>
+                    )}
+                  </div>
+
+                  {/* Image Gallery */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      Additional Images (Gallery)
+                    </label>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block w-full px-4 py-3 border border-foreground/20 bg-background cursor-pointer hover:border-accent transition-colors text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Upload className="w-4 h-4" />
+                            Add to Gallery
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              const files = e.target.files;
+                              if (files) {
+                                handleMultipleImageUpload(Array.from(files));
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {/* Display gallery images */}
+                    {productForm.imageGallery.length > 0 && (
+                      <div className="mt-4 grid grid-cols-4 gap-2">
+                        {productForm.imageGallery.map((imgUrl, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={imgUrl} 
+                              alt={`Gallery ${index + 1}`}
+                              className="w-full h-24 object-cover border border-foreground/20 rounded"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeGalleryImage(index)}
+                              className="absolute top-1 right-1 bg-destructive text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
 

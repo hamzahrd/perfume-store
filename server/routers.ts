@@ -150,6 +150,7 @@ export const appRouter = router({
           price: z.number().min(0),
           discountPrice: z.number().min(0).nullable().optional(),
           imageUrl: z.string().url(),
+          imageGallery: z.array(z.string()).optional(), // Add support for image gallery
           sizes: z.array(z.string()),
           topNotes: z.string().optional(),
           heartNotes: z.string().optional(),
@@ -178,6 +179,7 @@ export const appRouter = router({
           price: input.price.toString(),
           discountPrice: input.discountPrice?.toString() || null,
           imageUrl: input.imageUrl,
+          imageGallery: input.imageGallery ? JSON.stringify(input.imageGallery) : null, // Store image gallery
           sizes: JSON.stringify(input.sizes),
           topNotes: input.topNotes,
           heartNotes: input.heartNotes,
@@ -267,27 +269,6 @@ export const appRouter = router({
           throw new Error("Unauthorized");
         }
         await updateOrderStatus(input.orderId, input.status);
-        return { success: true };
-      }),
-
-    addItem: protectedProcedure
-      .input(
-        z.object({
-          orderId: z.number(),
-          productId: z.number(),
-          quantity: z.number(),
-          unitPrice: z.number(),
-          selectedSize: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        await addOrderItem(
-          input.orderId,
-          input.productId,
-          input.quantity,
-          input.unitPrice,
-          input.selectedSize
-        );
         return { success: true };
       }),
   }),

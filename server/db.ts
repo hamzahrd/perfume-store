@@ -1,7 +1,8 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, products, cartItems, orders, orderItems } from "../drizzle/schema";
+import { InsertUser, users, products, cartItems, orders, orderItems, type Order } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { WhatsAppService } from './whatsapp';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -190,7 +191,45 @@ export async function createOrder(userId: number, totalAmount: number, shippingA
   });
   
   const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  const order = result.length > 0 ? result[0] : undefined;
+  
+  if (order) {
+    // Get cart items for this user to add to the order
+    const userCartItems = await db.select().from(cartItems).where(eq(cartItems.userId, userId));
+    
+    // Add each cart item to order items and clear the cart
+    for (const cartItem of userCartItems) {
+      // Get the product to get the current price
+      const productResult = await db.select().from(products).where(eq(products.id, cartItem.productId)).limit(1);
+      const product = productResult.length > 0 ? productResult[0] : undefined;
+      
+      if (product) {
+        await db.insert(orderItems).values({
+          orderId: order.id,
+          productId: cartItem.productId,
+          quantity: cartItem.quantity,
+          unitPrice: product.discountPrice || product.price,
+          selectedSize: cartItem.selectedSize,
+        });
+      }
+    }
+    
+    // Clear the user's cart after order creation
+    await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    
+    // Get order items to send in WhatsApp notification
+    const orderItemsResult = await db.select().from(orderItems).where(eq(orderItems.orderId, order.id));
+    
+    // Send WhatsApp notification about the new order
+    try {
+      await WhatsAppService.sendOrderNotification(order, orderItemsResult);
+    } catch (error) {
+      console.error('Failed to send WhatsApp notification:', error);
+      // Don't fail the order creation if WhatsApp notification fails
+    }
+  }
+  
+  return order;
 }
 
 export async function getOrderById(orderId: number) {
