@@ -39,7 +39,7 @@ export default function Account() {
               Please sign in to access your account
             </p>
             <Link href="/login">
-              <a className="btn-elegant-filled">Sign In</a>
+              <a className="btn-primary">Sign In</a>
             </Link>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function Account() {
               </p>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 btn-elegant text-destructive border-destructive/30 hover:border-destructive/60"
+                className="w-full flex items-center justify-center gap-2 btn-secondary text-destructive border-destructive/30 hover:border-destructive/60"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
@@ -149,7 +149,7 @@ export default function Account() {
                       You haven't placed any orders yet
                     </p>
                     <Link href="/products">
-                      <a className="btn-elegant-filled">Start Shopping</a>
+                      <a className="btn-primary">Start Shopping</a>
                     </Link>
                   </div>
                 ) : (
@@ -262,7 +262,7 @@ export default function Account() {
                         </p>
                         <button
                           onClick={() => setEditingAddress(true)}
-                          className="btn-elegant"
+                          className="btn-secondary"
                         >
                           Edit Address
                         </button>
@@ -274,7 +274,7 @@ export default function Account() {
                         </p>
                         <button
                           onClick={() => setEditingAddress(true)}
-                          className="btn-elegant-filled"
+                          className="btn-primary"
                         >
                           Add Address
                         </button>

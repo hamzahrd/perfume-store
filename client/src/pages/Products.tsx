@@ -101,8 +101,8 @@ export default function Products() {
                       }}
                       className={`block w-full text-left px-3 py-2 transition-colors ${
                         selectedCategory === cat.value
-                          ? "bg-foreground/10 text-accent font-semibold"
-                          : "hover:bg-foreground/5"
+                          ? "bg-accent text-accent-foreground font-semibold rounded-lg"
+                          : "hover:bg-foreground/5 rounded-lg"
                       }`}
                     >
                       {cat.name}
@@ -117,7 +117,7 @@ export default function Products() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent rounded-lg"
                 >
                   <option value="featured">Featured</option>
                   <option value="newest">Newest</option>
@@ -131,19 +131,19 @@ export default function Products() {
                 <h3 className="text-lg font-semibold mb-4">Price Range</h3>
                 <div className="space-y-2 text-sm text-foreground/60">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>Under 100 DH</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>100 - 250 DH</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>250 - 500 DH</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>Over 500 DH</span>
                   </label>
                 </div>
@@ -168,7 +168,7 @@ export default function Products() {
               </div>
               <button
                 onClick={() => setFilterOpen(!filterOpen)}
-                className="lg:hidden p-2"
+                className="lg:hidden p-2 rounded-full hover:bg-foreground/10 transition-colors"
               >
                 {filterOpen ? (
                   <X className="w-5 h-5" />
@@ -181,10 +181,10 @@ export default function Products() {
             {/* Products Grid */}
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredProducts.map((product: any) => (
+                {filteredProducts.map((product: any, index) => (
                   <Link key={product.id} href={`/product/${product.id}`}>
-                    <a className="group">
-                      <div className="mb-4 aspect-square bg-card border border-foreground/10 flex items-center justify-center">
+                    <a className="product-card group">
+                      <div className="product-image-container">
                         {product.imageUrl ? (
                           <img 
                             src={product.imageUrl} 
@@ -200,42 +200,44 @@ export default function Products() {
                           <div className="text-5xl">🧴</div>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-foreground/60 mb-4 capitalize">
-                        {product.category}
-                      </p>
+                      <div className="p-4">
+                        <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-foreground/60 mb-4 capitalize">
+                          {product.category}
+                        </p>
 
-                      {/* Price */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {product.discountPrice ? (
-                            <>
+                        {/* Price */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {product.discountPrice ? (
+                              <>
+                                <span className="text-lg font-bold">
+                                  {product.discountPrice} DH
+                                </span>
+                                <span className="text-sm text-foreground/50 line-through">
+                                  {product.price} DH
+                                </span>
+                              </>
+                            ) : (
                               <span className="text-lg font-bold">
-                                {product.discountPrice} DH
-                              </span>
-                              <span className="text-sm text-foreground/50 line-through">
                                 {product.price} DH
                               </span>
-                            </>
-                          ) : (
-                            <span className="text-lg font-bold">
-                              {product.price} DH
-                            </span>
-                          )}
+                            )}
+                          </div>
+                          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </div>
-                        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
 
-                      {/* Stock Status */}
-                      {product.stock > 0 ? (
-                        <p className="text-xs text-accent mt-2">In Stock</p>
-                      ) : (
-                        <p className="text-xs text-destructive mt-2">
-                          Out of Stock
-                        </p>
-                      )}
+                        {/* Stock Status */}
+                        {product.stock > 0 ? (
+                          <p className="text-xs text-accent mt-2">In Stock</p>
+                        ) : (
+                          <p className="text-xs text-destructive mt-2">
+                            Out of Stock
+                          </p>
+                        )}
+                      </div>
                     </a>
                   </Link>
                 ))}
@@ -250,7 +252,7 @@ export default function Products() {
                     setSearchQuery("");
                     setSelectedCategory("all");
                   }}
-                  className="btn-elegant"
+                  className="btn-secondary"
                 >
                   Clear Filters
                 </button>
