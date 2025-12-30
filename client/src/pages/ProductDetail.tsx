@@ -99,19 +99,60 @@ export default function ProductDetail() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
           {/* Product Image */}
           <div className="flex flex-col gap-4">
-            <div className="aspect-square bg-card border border-foreground/10 flex items-center justify-center text-8xl">
-              🧴
+            <div className="aspect-square bg-card border border-foreground/10 flex items-center justify-center">
+              {product.imageUrl ? (
+                <img 
+                  src={product.imageUrl} 
+                  alt={product.name} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.parentElement!.innerHTML = '<div class="text-8xl">🧴</div>';
+                  }}
+                />
+              ) : (
+                <div className="text-8xl">🧴</div>
+              )}
             </div>
             {/* Thumbnail Gallery */}
             <div className="grid grid-cols-4 gap-2">
-              {[1, 2, 3, 4].map((i) => (
-                <button
-                  key={i}
-                  className="aspect-square bg-card border border-foreground/10 flex items-center justify-center text-4xl hover:border-accent transition-colors"
-                >
-                  🧴
-                </button>
-              ))}
+              {(() => {
+                const imageGallery = product.imageGallery 
+                  ? (typeof product.imageGallery === 'string' 
+                      ? JSON.parse(product.imageGallery) 
+                      : product.imageGallery)
+                  : [];
+                
+                const allImages = product.imageUrl ? [product.imageUrl, ...imageGallery] : imageGallery;
+                
+                return allImages.length > 0 
+                  ? allImages.slice(0, 4).map((imgUrl, index) => (
+                      <button
+                        key={index}
+                        className="aspect-square bg-card border border-foreground/10 flex items-center justify-center hover:border-accent transition-colors"
+                      >
+                        <img 
+                          src={imgUrl} 
+                          alt={`Gallery ${index + 1}`} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.parentElement!.innerHTML = '<div class="text-4xl">🧴</div>';
+                          }}
+                        />
+                      </button>
+                    ))
+                  : [1, 2, 3, 4].map((i) => (
+                      <button
+                        key={i}
+                        className="aspect-square bg-card border border-foreground/10 flex items-center justify-center text-4xl hover:border-accent transition-colors"
+                      >
+                        🧴
+                      </button>
+                    ));
+              })()}
             </div>
           </div>
 
