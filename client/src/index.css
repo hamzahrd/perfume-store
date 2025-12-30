@@ -208,6 +208,80 @@
     font-size: 0.8125rem;
   }
 
+  /* Modern button styles */
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-accent to-foreground text-background rounded-full font-medium hover:from-accent/90 hover:to-foreground/90 transition-all duration-300 shadow-lg hover:shadow-xl;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.025em;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 border border-foreground/30 bg-transparent text-foreground hover:bg-foreground/5 transition-colors duration-300 rounded-full;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.025em;
+  }
+
+  .btn-accent {
+    @apply px-6 py-3 bg-accent text-accent-foreground rounded-full font-medium hover:bg-accent/90 transition-colors duration-300;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.025em;
+  }
+
+  /* Product card styles */
+  .product-card {
+    @apply bg-card border border-foreground/10 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-accent/30;
+  }
+
+  .product-image-container {
+    @apply aspect-square bg-foreground/5 flex items-center justify-center transition-transform duration-500 hover:scale-105;
+  }
+
+  /* Hero gradient */
+  .hero-gradient {
+    background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
+  }
+
+  /* Animation classes */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Glassmorphism effect */
+  .glass-effect {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  }
+
+  /* Floating elements */
+  .floating {
+    animation: floating 6s ease-in-out infinite;
+  }
+
+  @keyframes floating {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+
   @media (min-width: 640px) {
     .container {
       padding-left: 1.5rem;

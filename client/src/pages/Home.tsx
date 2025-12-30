@@ -46,7 +46,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background border-b border-foreground/10">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-foreground/10">
         <div className="container flex items-center justify-between py-4">
           <Link href="/">
             <a className="text-2xl font-bold tracking-tight font-serif">
@@ -57,34 +57,38 @@ export default function Home() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link href="/products?category=men">
-              <a className="text-sm hover:text-accent transition-colors">
+              <a className="text-sm hover:text-accent transition-colors relative group">
                 Men
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" />
               </a>
             </Link>
             <Link href="/products?category=women">
-              <a className="text-sm hover:text-accent transition-colors">
+              <a className="text-sm hover:text-accent transition-colors relative group">
                 Women
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" />
               </a>
             </Link>
             <Link href="/products?category=unisex">
-              <a className="text-sm hover:text-accent transition-colors">
+              <a className="text-sm hover:text-accent transition-colors relative group">
                 Unisex
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" />
               </a>
             </Link>
             <Link href="/products?category=pack">
-              <a className="text-sm hover:text-accent transition-colors">
+              <a className="text-sm hover:text-accent transition-colors relative group">
                 Packs
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" />
               </a>
             </Link>
           </nav>
 
           {/* Right Actions */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 hover:bg-foreground/5 transition-colors">
+            <button className="p-2 hover:bg-foreground/10 transition-colors rounded-full">
               <Search className="w-5 h-5" />
             </button>
             <Link href="/cart">
-              <a className="p-2 hover:bg-foreground/5 transition-colors relative">
+              <a className="p-2 hover:bg-foreground/10 transition-colors relative rounded-full">
                 <ShoppingBag className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
               </a>
@@ -113,7 +117,7 @@ export default function Home() {
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2"
+              className="md:hidden p-2 hover:bg-foreground/10 transition-colors rounded-full"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -123,34 +127,35 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-accent/5" />
-
-        <div className="relative z-10 container text-center max-w-4xl mx-auto px-4">
+        <div className="absolute inset-0 hero-gradient from-background via-background to-accent/10" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-overlay opacity-10" />
+        
+        <div className="relative z-10 container text-center max-w-4xl mx-auto px-4 animate-fade-in-up">
           <div className="mb-8 space-y-2">
-            <p className="text-sm tracking-widest text-foreground/60 font-sans">
+            <p className="text-sm tracking-widest text-foreground/60 font-sans uppercase">
               DISCOVER ELEGANCE
             </p>
             <div className="h-px bg-foreground/20 max-w-20 mx-auto" />
           </div>
 
-          <h1 className="text-7xl md:text-8xl font-bold mb-6 leading-tight">
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
             The Art of
             <br />
-            <span className="text-accent">Fragrance</span>
+            <span className="text-accent bg-gradient-to-r from-accent to-foreground bg-clip-text text-transparent">Fragrance</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-foreground/70 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-foreground/70 mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
             Curated collection of premium perfumes from around the world. Each
             fragrance tells a story of elegance and sophistication.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <Link href="/products">
-              <a className="btn-elegant-filled">
+              <a className="btn-primary">
                 Explore Collection
               </a>
             </Link>
-            <button className="btn-elegant">
+            <button className="btn-secondary">
               Learn More
             </button>
           </div>
@@ -180,14 +185,15 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {categories.map((category) => (
+            {categories.map((category, index) => (
               <Link key={category.slug} href={`/products?category=${category.slug}`}>
-                <a className="group cursor-pointer">
-                  <div className="mb-4 aspect-square bg-card border border-foreground/10 flex items-center justify-center text-6xl group-hover:bg-foreground/5 transition-colors">
-                    {category.image}
+                <a className="group cursor-pointer transform transition-all duration-300 hover:scale-105">
+                  <div className="mb-4 aspect-square bg-card border border-foreground/10 flex items-center justify-center text-6xl group-hover:bg-foreground/5 transition-colors rounded-xl overflow-hidden relative">
+                    <span className="floating">{category.image}</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{category.name}</h3>
-                  <p className="text-sm text-foreground/60 flex items-center group-hover:text-accent transition-colors">
+                  <h3 className="text-lg font-semibold mb-2 text-center">{category.name}</h3>
+                  <p className="text-sm text-foreground/60 flex items-center justify-center group-hover:text-accent transition-colors">
                     Shop Now <ChevronRight className="w-4 h-4 ml-2" />
                   </p>
                 </a>
@@ -216,21 +222,23 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {exclusivePacks.map((pack) => (
+            {exclusivePacks.map((pack, index) => (
               <div
                 key={pack.id}
-                className="border border-foreground/10 p-8 hover:border-accent/50 transition-colors group"
+                className="product-card group"
               >
-                <div className="text-5xl mb-6">{pack.image}</div>
-                <h3 className="text-2xl font-semibold mb-2">{pack.name}</h3>
-                <p className="text-foreground/60 text-sm mb-6">
-                  {pack.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xl font-bold">{pack.price}</span>
-                  <button className="btn-elegant-outline group-hover:border-accent/70 transition-colors">
-                    View
-                  </button>
+                <div className="p-8">
+                  <div className="text-5xl mb-6 text-center">{pack.image}</div>
+                  <h3 className="text-2xl font-semibold mb-2 text-center">{pack.name}</h3>
+                  <p className="text-foreground/60 text-sm mb-6 text-center">
+                    {pack.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl font-bold">{pack.price}</span>
+                    <button className="btn-accent group-hover:scale-105 transition-transform">
+                      View
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -257,21 +265,23 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {bestSellers?.slice(0, 4).map((product: any) => (
+            {bestSellers?.slice(0, 4).map((product: any, index) => (
               <Link key={product.id} href={`/product/${product.id}`}>
-                <a className="group">
-                  <div className="mb-4 aspect-square bg-card border border-foreground/10 flex items-center justify-center text-4xl group-hover:bg-foreground/5 transition-colors">
+                <a className="product-card group">
+                  <div className="product-image-container">
                     🧴
                   </div>
-                  <h3 className="text-lg font-semibold mb-2 line-clamp-2">
-                    {product.name}
-                  </h3>
-                  <p className="text-foreground/60 text-sm mb-4">
-                    {product.category}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold">{product.price} DH</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">
+                      {product.name}
+                    </h3>
+                    <p className="text-foreground/60 text-sm mb-4">
+                      {product.category}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">{product.price} DH</span>
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
                 </a>
               </Link>
@@ -286,23 +296,24 @@ export default function Home() {
       </div>
 
       {/* Newsletter Section */}
-      <section className="py-20 md:py-32">
-        <div className="container max-w-2xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <section className="py-20 md:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 hero-gradient from-foreground/5 via-transparent to-accent/5 z-0" />
+        <div className="container max-w-2xl mx-auto text-center relative z-10">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">
             Stay Updated
           </h2>
-          <p className="text-foreground/60 mb-8">
+          <p className="text-foreground/60 mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             Subscribe to our newsletter for exclusive offers and new fragrance
             releases.
           </p>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 max-w-md mx-auto animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-4 py-3 border border-foreground/20 bg-background focus:outline-none focus:border-accent transition-colors"
+              className="flex-1 px-4 py-3 border border-foreground/20 bg-background focus:outline-none focus:border-accent transition-colors rounded-l-lg"
             />
-            <button className="btn-elegant-filled">Subscribe</button>
+            <button className="btn-primary rounded-r-lg">Subscribe</button>
           </div>
         </div>
       </section>

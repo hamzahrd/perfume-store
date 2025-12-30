@@ -178,11 +178,11 @@ export default function ProductDetail() {
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 {product.name}
               </h1>
-              <p className="text-2xl font-bold mb-4">
+              <p className="text-3xl font-bold mb-4">
                 {product.discountPrice || product.price} DH
               </p>
               {product.discountPrice && (
-                <p className="text-sm text-foreground/60 line-through">
+                <p className="text-lg text-foreground/60 line-through">
                   {product.price} DH
                 </p>
               )}
@@ -228,14 +228,14 @@ export default function ProductDetail() {
             {/* Size Selection */}
             <div className="mb-8">
               <p className="text-sm font-semibold mb-4">Size</p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 {sizes.map((size: string) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`px-4 py-2 border transition-colors ${
+                    className={`px-4 py-2 border transition-colors rounded-lg ${
                       selectedSize === size
-                        ? "border-accent bg-foreground/5"
+                        ? "border-accent bg-accent text-accent-foreground"
                         : "border-foreground/20 hover:border-accent"
                     }`}
                   >
@@ -251,14 +251,14 @@ export default function ProductDetail() {
               <div className="flex items-center gap-4 w-fit">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center"
+                  className="w-10 h-10 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center rounded-lg"
                 >
                   −
                 </button>
                 <span className="w-8 text-center font-semibold">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center"
+                  className="w-10 h-10 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center rounded-lg"
                 >
                   +
                 </button>
@@ -277,18 +277,18 @@ export default function ProductDetail() {
             </div>
 
             {/* Add to Cart Button */}
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <button
                 onClick={handleAddToCart}
                 disabled={(product.stock ?? 0) === 0 || addToCartMutation.isPending}
-                className="flex-1 btn-elegant-filled flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 btn-primary min-w-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ShoppingBag className="w-5 h-5" />
+                <ShoppingBag className="w-5 h-5 mr-2" />
                 {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
               </button>
               <button
                 onClick={() => setIsWishlisted(!isWishlisted)}
-                className="px-6 py-3 border border-foreground/40 hover:border-accent transition-colors flex items-center justify-center"
+                className="p-4 border border-foreground/20 hover:border-accent transition-colors rounded-lg flex items-center justify-center"
               >
                 <Heart
                   className={`w-5 h-5 ${

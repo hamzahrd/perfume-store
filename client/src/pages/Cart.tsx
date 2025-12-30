@@ -84,7 +84,7 @@ export default function Cart() {
               Please sign in to view your cart
             </p>
             <Link href="/login">
-              <a className="btn-elegant-filled">Sign In</a>
+              <a className="btn-primary">Sign In</a>
             </Link>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function Cart() {
               Your cart is empty
             </p>
             <Link href="/products">
-              <a className="btn-elegant-filled">Start Shopping</a>
+              <a className="btn-primary">Start Shopping</a>
             </Link>
           </div>
         ) : (
@@ -132,60 +132,63 @@ export default function Cart() {
                 {cartItems.map((item: any) => (
                   <div
                     key={item.id}
-                    className="flex gap-6 pb-8 border-b border-foreground/10"
+                    className="product-card p-6"
                   >
-                    {/* Product Image */}
-                    <div className="w-24 h-24 bg-card border border-foreground/10 flex items-center justify-center text-3xl flex-shrink-0">
-                      🧴
-                    </div>
-
                     {/* Product Info */}
-                    <div className="flex-1">
-                      <Link href={`/product/${item.productId}`}>
-                        <a className="text-lg font-semibold hover:text-accent transition-colors mb-2">
-                          {item.product?.name || "Product"}
-                        </a>
-                      </Link>
-                      <p className="text-sm text-foreground/60 mb-4">
-                        Size: {item.selectedSize || "Standard"}
-                      </p>
-
-                      {/* Quantity Selector */}
-                      <div className="flex items-center gap-3 w-fit mb-4">
-                        <button
-                          onClick={() =>
-                            handleUpdateQuantity(item.id, item.quantity - 1)
-                          }
-                          className="w-8 h-8 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="w-6 text-center font-semibold">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleUpdateQuantity(item.id, item.quantity + 1)
-                          }
-                          className="w-8 h-8 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
+                    <div className="flex gap-6">
+                      {/* Product Image */}
+                      <div className="w-24 h-24 bg-card border border-foreground/10 flex items-center justify-center text-3xl flex-shrink-0 rounded-lg">
+                        🧴
                       </div>
 
-                      {/* Price */}
-                      <p className="font-bold">
-                        {parseFloat(item.product?.price || 0) * item.quantity} DH
-                      </p>
-                    </div>
+                      {/* Product Details */}
+                      <div className="flex-1">
+                        <Link href={`/product/${item.productId}`}>
+                          <a className="text-lg font-semibold hover:text-accent transition-colors mb-2 block">
+                            {item.product?.name || "Product"}
+                          </a>
+                        </Link>
+                        <p className="text-sm text-foreground/60 mb-4">
+                          Size: {item.selectedSize || "Standard"}
+                        </p>
 
-                    {/* Remove Button */}
-                    <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="p-2 hover:bg-destructive/10 text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                        {/* Quantity Selector */}
+                        <div className="flex items-center gap-3 w-fit mb-4">
+                          <button
+                            onClick={() =>
+                              handleUpdateQuantity(item.id, item.quantity - 1)
+                            }
+                            className="w-8 h-8 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center rounded-lg"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-6 text-center font-semibold">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleUpdateQuantity(item.id, item.quantity + 1)
+                            }
+                            className="w-8 h-8 border border-foreground/20 hover:border-accent transition-colors flex items-center justify-center rounded-lg"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Price */}
+                        <p className="font-bold">
+                          {parseFloat(item.product?.price || 0) * item.quantity} DH
+                        </p>
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="p-2 hover:bg-destructive/10 text-destructive transition-colors rounded-lg"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -196,7 +199,7 @@ export default function Cart() {
               <div className="border border-foreground/10 p-8 sticky top-24">
                 <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
 
-                <div className="space-y-4 mb-6 pb-6 border-b border-foreground/10">
+                <div className="flex flex-col gap-4">
                   <div className="flex justify-between text-foreground/60">
                     <span>Subtotal</span>
                     <span>{cartTotal.toFixed(2)} DH</span>
@@ -221,13 +224,13 @@ export default function Cart() {
                 <button
                   onClick={() => setIsCheckingOut(true)}
                   disabled={createOrderMutation.isPending}
-                  className="w-full btn-elegant-filled mb-4 disabled:opacity-50"
+                  className="w-full btn-primary mb-4 disabled:opacity-50"
                 >
                   {createOrderMutation.isPending ? "Processing..." : "Proceed to Checkout"}
                 </button>
 
                 <Link href="/products">
-                  <a className="block text-center btn-elegant">
+                  <a className="block text-center btn-secondary">
                     Continue Shopping
                   </a>
                 </Link>
