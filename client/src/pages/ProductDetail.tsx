@@ -65,9 +65,21 @@ export default function ProductDetail() {
     );
   }
 
-  const sizes = typeof product.sizes === "string" 
-    ? JSON.parse(product.sizes) 
-    : (product.sizes as string[]) || ["30ml", "50ml", "100ml"];
+  const sizes = (() => {
+    try {
+      if (typeof product.sizes === "string") {
+        const parsed = JSON.parse(product.sizes);
+        return Array.isArray(parsed) ? parsed : ["30ml", "50ml", "100ml"];
+      } else if (Array.isArray(product.sizes)) {
+        return product.sizes;
+      } else {
+        return ["30ml", "50ml", "100ml"];
+      }
+    } catch (e) {
+      console.error("Error parsing sizes:", e);
+      return ["30ml", "50ml", "100ml"];
+    }
+  })();
 
   return (
     <div className="min-h-screen bg-background">

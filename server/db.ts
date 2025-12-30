@@ -4,6 +4,29 @@ import { InsertUser, users, products, cartItems, orders, orderItems, type Order 
 import { ENV } from './_core/env';
 import { WhatsAppService } from './whatsapp';
 
+// Utility function to parse JSON fields in products
+function parseProductJsonFields(product: any) {
+  // Parse sizes field
+  if (typeof product.sizes === 'string') {
+    try {
+      product.sizes = JSON.parse(product.sizes);
+    } catch (e) {
+      console.error('Error parsing sizes:', e);
+      product.sizes = ["30ml", "50ml", "100ml"]; // Default sizes
+    }
+  }
+  // Parse imageGallery field
+  if (typeof product.imageGallery === 'string') {
+    try {
+      product.imageGallery = JSON.parse(product.imageGallery);
+    } catch (e) {
+      console.error('Error parsing imageGallery:', e);
+      product.imageGallery = [];
+    }
+  }
+  return product;
+}
+
 let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
@@ -107,28 +130,38 @@ export async function getProducts(category?: string) {
   const db = await getDb();
   if (!db) return [];
 
+  let query;
   if (category && category !== 'all') {
-    return db.select().from(products).where(
+    query = db.select().from(products).where(
       and(eq(products.isActive, true), eq(products.category, category as any))
     );
+  } else {
+    query = db.select().from(products).where(eq(products.isActive, true));
   }
-  return db.select().from(products).where(eq(products.isActive, true));
+
+  const results = await query;
+
+  // Parse JSON fields for each product
+  return results.map(parseProductJsonFields);
 }
 
 export async function getProductById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  return result.length > 0 ? parseProductJsonFields(result[0]) : undefined;
 }
 
 export async function searchProducts(query: string) {
   const db = await getDb();
   if (!db) return [];
   // Simple search - in production, use full-text search
-  return db.select().from(products).where(
+  const results = await db.select().from(products).where(
     eq(products.isActive, true)
   );
+  
+  // Parse JSON fields for each product
+  return results.map(parseProductJsonFields);
 }
 
 // Cart queries
