@@ -11,6 +11,8 @@ import Cart from "./pages/Cart";
 import Account from "./pages/Account";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import AdminDashboard from "./pages/AdminDashboard";
+import SignIn from "./pages/SignIn";
+import Register from "./pages/Register";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,6 +24,8 @@ function Router() {
       <Route path="/cart" component={Cart} />
       <Route path="/account" component={Account} />
       <Route path="/order-confirmation/:id" component={OrderConfirmation} />
+      <Route path="/login" component={SignIn} />
+      <Route path="/register" component={Register} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}

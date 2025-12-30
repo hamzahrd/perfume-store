@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ChevronLeft, Plus, Edit, Trash2, Package, ShoppingBag } from "lucide-react";
+import { ChevronLeft, Plus, Edit, Trash2, Package, ShoppingBag, Upload } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -10,11 +10,95 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("products");
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [productForm, setProductForm] = useState({
+    name: "",
+    description: "",
+    category: "unisex",
+    price: 0,
+    discountPrice: null as number | null,
+    imageUrl: "",
+    sizes: ["30ml", "50ml", "100ml"],
+    topNotes: "",
+    heartNotes: "",
+    baseNotes: "",
+    stock: 0,
+  });
 
   const { data: products = [] } = trpc.products.list.useQuery({});
   const { data: orders = [] } = trpc.orders.getUserOrders.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
   });
+
+  const utils = trpc.useUtils();
+
+  const createProductMutation = trpc.products.create.useMutation({
+    onSuccess: () => {
+      toast.success("Product created successfully!");
+      setShowProductForm(false);
+      setProductForm({
+        name: "",
+        description: "",
+        category: "unisex",
+        price: 0,
+        discountPrice: null,
+        imageUrl: "",
+        sizes: ["30ml", "50ml", "100ml"],
+        topNotes: "",
+        heartNotes: "",
+        baseNotes: "",
+        stock: 0,
+      });
+      utils.products.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to create product");
+    },
+  });
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const formData = new FormData();
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const blob = e.target?.result as ArrayBuffer;
+          const response = await fetch("/api/upload/upload", {
+            method: "POST",
+            headers: {
+              "x-file-ext": ext,
+            },
+            body: blob,
+          });
+
+          if (!response.ok) throw new Error("Upload failed");
+          
+          const data = await response.json();
+          if (data.success) {
+            setProductForm({ ...productForm, imageUrl: data.url });
+            setImagePreview(data.url);
+            toast.success("Image uploaded successfully!");
+          } else {
+            throw new Error(data.error || "Upload failed");
+          }
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Upload failed");
+        } finally {
+          setIsUploadingImage(false);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      toast.error("Failed to upload image");
+      setIsUploadingImage(false);
+    }
+  };
 
   // Check if user is admin
   if (!isAuthenticated || user?.role !== "admin") {
@@ -22,10 +106,10 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-background">
         <div className="container py-12">
           <Link href="/">
-            <a className="flex items-center gap-2 text-accent hover:text-accent/80 transition-colors mb-8">
+            <div className="flex items-center gap-2 text-accent hover:text-accent/80 transition-colors mb-8 cursor-pointer">
               <ChevronLeft className="w-5 h-5" />
               Back Home
-            </a>
+            </div>
           </Link>
 
           <div className="text-center py-16">
@@ -34,7 +118,7 @@ export default function AdminDashboard() {
               You don't have permission to access this page
             </p>
             <Link href="/">
-              <a className="btn-elegant-filled">Back Home</a>
+              <div className="btn-elegant-filled cursor-pointer">Back Home</div>
             </Link>
           </div>
         </div>
@@ -58,10 +142,10 @@ export default function AdminDashboard() {
 
       <div className="container py-8 md:py-12">
         <Link href="/">
-          <a className="flex items-center gap-2 text-accent hover:text-accent/80 transition-colors mb-8">
+          <div className="flex items-center gap-2 text-accent hover:text-accent/80 transition-colors mb-8 cursor-pointer">
             <ChevronLeft className="w-5 h-5" />
             Back Home
-          </a>
+          </div>
         </Link>
 
         <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
@@ -133,7 +217,17 @@ export default function AdminDashboard() {
                 <h3 className="text-xl font-bold mb-6">
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </h3>
-                <form className="space-y-6 max-w-2xl">
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    createProductMutation.mutate({
+                      ...productForm,
+                      price: Number(productForm.price),
+                      discountPrice: productForm.discountPrice ? Number(productForm.discountPrice) : null,
+                      stock: Number(productForm.stock),
+                    });
+                  }}
+                  className="space-y-6 max-w-2xl">
                   <div>
                     <label className="block text-sm font-semibold mb-2">
                       Product Name
@@ -141,7 +235,10 @@ export default function AdminDashboard() {
                     <input
                       type="text"
                       placeholder="e.g., Eau de Parfum"
+                      value={productForm.name}
+                      onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                       className="w-full px-4 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent"
+                      required
                     />
                   </div>
 
@@ -149,7 +246,10 @@ export default function AdminDashboard() {
                     <label className="block text-sm font-semibold mb-2">
                       Category
                     </label>
-                    <select className="w-full px-4 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent">
+                    <select 
+                      value={productForm.category}
+                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                      className="w-full px-4 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent">
                       <option value="men">Men</option>
                       <option value="women">Women</option>
                       <option value="unisex">Unisex</option>
@@ -165,7 +265,11 @@ export default function AdminDashboard() {
                       <input
                         type="number"
                         placeholder="0.00"
+                        value={productForm.price}
+                        onChange={(e) => setProductForm({ ...productForm, price: parseFloat(e.target.value) })}
                         className="w-full px-4 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent"
+                        step="0.01"
+                        required
                       />
                     </div>
                     <div>
@@ -175,9 +279,55 @@ export default function AdminDashboard() {
                       <input
                         type="number"
                         placeholder="0"
+                        value={productForm.stock}
+                        onChange={(e) => setProductForm({ ...productForm, stock: parseInt(e.target.value) })}
                         className="w-full px-4 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent"
+                        required
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      Product Image
+                    </label>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block w-full px-4 py-3 border border-foreground/20 bg-background cursor-pointer hover:border-accent transition-colors text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Upload className="w-4 h-4" />
+                            Choose Image
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleImageUpload(file);
+                              }
+                            }}
+                            className="hidden"
+                            disabled={isUploadingImage}
+                          />
+                        </label>
+                      </div>
+                      {imagePreview && (
+                        <div className="w-32 h-32 border border-foreground/20 rounded overflow-hidden">
+                          <img 
+                            src={imagePreview} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {isUploadingImage && (
+                      <p className="text-sm text-accent mt-2">Uploading image...</p>
+                    )}
+                    {productForm.imageUrl && !isUploadingImage && (
+                      <p className="text-sm text-green-500 mt-2">Image uploaded ✓</p>
+                    )}
                   </div>
 
                   <div>
@@ -186,7 +336,10 @@ export default function AdminDashboard() {
                     </label>
                     <textarea
                       placeholder="Product description..."
+                      value={productForm.description}
+                      onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                       className="w-full px-4 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent h-24 resize-none"
+                      required
                     />
                   </div>
 
@@ -201,8 +354,12 @@ export default function AdminDashboard() {
                     >
                       Cancel
                     </button>
-                    <button type="submit" className="btn-elegant-filled">
-                      {editingProduct ? "Update Product" : "Add Product"}
+                    <button 
+                      type="submit" 
+                      disabled={createProductMutation.isPending || isUploadingImage}
+                      className="btn-elegant-filled disabled:opacity-50"
+                    >
+                      {createProductMutation.isPending ? "Creating..." : (isUploadingImage ? "Uploading..." : "Add Product")}
                     </button>
                   </div>
                 </form>

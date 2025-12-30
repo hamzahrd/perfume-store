@@ -65,7 +65,9 @@ export default function ProductDetail() {
     );
   }
 
-  const sizes = (product.sizes as string[]) || ["30ml", "50ml", "100ml"];
+  const sizes = typeof product.sizes === "string" 
+    ? JSON.parse(product.sizes) 
+    : (product.sizes as string[]) || ["30ml", "50ml", "100ml"];
 
   return (
     <div className="min-h-screen bg-background">

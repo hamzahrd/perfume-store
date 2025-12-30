@@ -1,4 +1,3 @@
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
@@ -8,8 +7,11 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
+const TOKEN_STORAGE_KEY = "auth-token";
+const REFRESH_TOKEN_STORAGE_KEY = "auth-refresh-token";
+
 export function useAuth(options?: UseAuthOptions) {
-  const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
+  const { redirectOnUnauthenticated = false, redirectPath = "/login" } =
     options ?? {};
   const utils = trpc.useUtils();
 
@@ -21,6 +23,9 @@ export function useAuth(options?: UseAuthOptions) {
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       utils.auth.me.setData(undefined, null);
+      // Clear tokens
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     },
   });
 
@@ -40,6 +45,19 @@ export function useAuth(options?: UseAuthOptions) {
       await utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
+
+  // Store token when available
+  const setToken = useCallback((token: string, refreshToken?: string) => {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+    }
+  }, []);
+
+  // Get stored token
+  const getToken = useCallback(() => {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  }, []);
 
   const state = useMemo(() => {
     localStorage.setItem(
@@ -80,5 +98,7 @@ export function useAuth(options?: UseAuthOptions) {
     ...state,
     refresh: () => meQuery.refetch(),
     logout,
+    setToken,
+    getToken,
   };
 }

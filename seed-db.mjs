@@ -1,5 +1,6 @@
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
@@ -177,7 +178,35 @@ const perfumes = [
 ];
 
 try {
-  console.log("🌱 Seeding database with perfume products...");
+  console.log("🌱 Seeding database with perfume products and admin user...");
+
+  // Create admin user
+  const adminEmail = "admin@example.com";
+  const adminPassword = "Admin123";
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+  const adminOpenId = `email-${adminEmail}-${Date.now()}`;
+
+  try {
+    await connection.execute(
+      `INSERT INTO users (openId, email, name, passwordHash, loginMethod, role, lastSignedIn, createdAt, updatedAt) 
+       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
+      [
+        adminOpenId,
+        adminEmail,
+        "Admin User",
+        adminPasswordHash,
+        "email",
+        "admin"
+      ]
+    );
+    console.log(`✓ Created admin user: ${adminEmail} / password: ${adminPassword}`);
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      console.log(`⚠ Admin user already exists: ${adminEmail}`);
+    } else {
+      throw error;
+    }
+  }
 
   for (const perfume of perfumes) {
     await connection.execute(

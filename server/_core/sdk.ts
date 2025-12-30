@@ -7,6 +7,7 @@ import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
+import { verifyToken } from "./jwt";
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
@@ -84,11 +85,17 @@ const createOAuthHttpClient = (): AxiosInstance =>
 
 class SDKServer {
   private readonly client: AxiosInstance;
-  private readonly oauthService: OAuthService;
+  private readonly oauthService: OAuthService | null;
 
-  constructor(client: AxiosInstance = createOAuthHttpClient()) {
-    this.client = client;
-    this.oauthService = new OAuthService(this.client);
+  constructor(client: AxiosInstance | null = null) {
+    // Only create OAuth client if URL is configured
+    if (ENV.oAuthServerUrl) {
+      this.client = client || createOAuthHttpClient();
+      this.oauthService = new OAuthService(this.client);
+    } else {
+      this.client = client || axios.create({ timeout: AXIOS_TIMEOUT_MS });
+      this.oauthService = null;
+    }
   }
 
   private deriveLoginMethod(
@@ -122,6 +129,9 @@ class SDKServer {
     code: string,
     state: string
   ): Promise<ExchangeTokenResponse> {
+    if (!this.oauthService) {
+      throw new Error("OAuth is not configured");
+    }
     return this.oauthService.getTokenByCode(code, state);
   }
 
@@ -131,6 +141,9 @@ class SDKServer {
    * const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
    */
   async getUserInfo(accessToken: string): Promise<GetUserInfoResponse> {
+    if (!this.oauthService) {
+      throw new Error("OAuth is not configured");
+    }
     const data = await this.oauthService.getUserInfoByToken({
       accessToken,
     } as ExchangeTokenResponse);
@@ -257,8 +270,28 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
-    const cookies = this.parseCookies(req.headers.cookie);
+    // First try JWT token from Authorization header
+    const authHeader = (req.headers.authorization || "") as string;
+    if (authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const payload = verifyToken(token);
+      
+      if (payload) {
+        // Get user from database using userId from JWT
+        const user = await db.getUserById(payload.userId);
+        if (user) {
+          console.log("[Auth] JWT auth success:", { userId: user.id, role: user.role });
+          return user;
+        } else {
+          console.log("[Auth] User not found for JWT userId:", payload.userId);
+        }
+      } else {
+        console.log("[Auth] JWT verification failed");
+      }
+    }
+
+    // Fallback to OAuth session cookie
+    const cookies = this.parseCookies((req.headers.cookie || "") as string);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
 

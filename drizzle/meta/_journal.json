@@ -15,6 +15,13 @@
       "when": 1766845134042,
       "tag": "0001_organic_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1766947977703,
+      "tag": "0002_lucky_klaw",
+      "breakpoints": true
     }
   ]
 }
