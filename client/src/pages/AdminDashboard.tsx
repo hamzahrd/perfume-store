@@ -38,6 +38,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       toast.success("Product created successfully!");
       setShowProductForm(false);
+      setEditingProduct(null);
       setProductForm({
         name: "",
         description: "",
@@ -52,10 +53,48 @@ export default function AdminDashboard() {
         baseNotes: "",
         stock: 0,
       });
+      setImagePreview("");
       utils.products.list.invalidate();
     },
     onError: (error) => {
       toast.error(error.message || "Failed to create product");
+    },
+  });
+
+  const updateProductMutation = trpc.products.update.useMutation({
+    onSuccess: () => {
+      toast.success("Product updated successfully!");
+      setShowProductForm(false);
+      setEditingProduct(null);
+      setProductForm({
+        name: "",
+        description: "",
+        category: "unisex",
+        price: 0,
+        discountPrice: null,
+        imageUrl: "",
+        imageGallery: [],
+        sizes: ["30ml", "50ml", "100ml"],
+        topNotes: "",
+        heartNotes: "",
+        baseNotes: "",
+        stock: 0,
+      });
+      setImagePreview("");
+      utils.products.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update product");
+    },
+  });
+
+  const deleteProductMutation = trpc.products.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Product deleted successfully!");
+      utils.products.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete product");
     },
   });
 
@@ -69,10 +108,10 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      toast.error("File size exceeds 5MB limit");
+      toast.error("File size exceeds 10MB limit");
       return;
     }
 
@@ -299,13 +338,22 @@ export default function AdminDashboard() {
                 <form 
                   onSubmit={(e) => {
                     e.preventDefault();
-                    createProductMutation.mutate({
+                    const formData = {
                       ...productForm,
                       price: Number(productForm.price),
                       discountPrice: productForm.discountPrice ? Number(productForm.discountPrice) : null,
                       stock: Number(productForm.stock),
-                      imageGallery: productForm.imageGallery, // Include image gallery
-                    });
+                      imageGallery: productForm.imageGallery,
+                    };
+                    
+                    if (editingProduct) {
+                      updateProductMutation.mutate({
+                        ...formData,
+                        id: editingProduct.id,
+                      });
+                    } else {
+                      createProductMutation.mutate(formData);
+                    }
                   }}
                   className="space-y-6 max-w-2xl">
                   <div>
@@ -397,7 +445,7 @@ export default function AdminDashboard() {
                           <img 
                             src={imagePreview} 
                             alt="Preview" 
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain p-2"
                           />
                         </div>
                       )}
@@ -446,7 +494,7 @@ export default function AdminDashboard() {
                             <img 
                               src={imgUrl} 
                               alt={`Gallery ${index + 1}`}
-                              className="w-full h-24 object-cover border border-foreground/20 rounded"
+                              className="w-full h-24 object-contain border border-foreground/20 rounded p-1"
                             />
                             <button
                               type="button"
@@ -487,10 +535,12 @@ export default function AdminDashboard() {
                     </button>
                     <button 
                       type="submit" 
-                      disabled={createProductMutation.isPending || isUploadingImage}
+                      disabled={createProductMutation.isPending || updateProductMutation.isPending || isUploadingImage}
                       className="btn-elegant-filled disabled:opacity-50"
                     >
-                      {createProductMutation.isPending ? "Creating..." : (isUploadingImage ? "Uploading..." : "Add Product")}
+                      {(createProductMutation.isPending || updateProductMutation.isPending) 
+                        ? (editingProduct ? "Updating..." : "Creating...") 
+                        : (isUploadingImage ? "Uploading..." : (editingProduct ? "Update Product" : "Add Product"))}
                     </button>
                   </div>
                 </form>
@@ -514,13 +564,46 @@ export default function AdminDashboard() {
                     <button
                       onClick={() => {
                         setEditingProduct(product);
+                        // Parse sizes and imageGallery if they're strings
+                        const sizes = typeof product.sizes === 'string' 
+                          ? JSON.parse(product.sizes) 
+                          : product.sizes || ["30ml", "50ml", "100ml"];
+                        const imageGallery = product.imageGallery 
+                          ? (typeof product.imageGallery === 'string' 
+                              ? JSON.parse(product.imageGallery) 
+                              : product.imageGallery)
+                          : [];
+                        
+                        setProductForm({
+                          name: product.name,
+                          description: product.description,
+                          category: product.category,
+                          price: parseFloat(product.price),
+                          discountPrice: product.discountPrice ? parseFloat(product.discountPrice) : null,
+                          imageUrl: product.imageUrl,
+                          imageGallery: imageGallery,
+                          sizes: sizes,
+                          topNotes: product.topNotes || "",
+                          heartNotes: product.heartNotes || "",
+                          baseNotes: product.baseNotes || "",
+                          stock: product.stock,
+                        });
+                        setImagePreview(product.imageUrl);
                         setShowProductForm(true);
                       }}
                       className="p-2 hover:bg-foreground/5 transition-colors"
                     >
                       <Edit className="w-5 h-5" />
                     </button>
-                    <button className="p-2 hover:bg-destructive/10 text-destructive transition-colors">
+                    <button 
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
+                          deleteProductMutation.mutate({ id: product.id });
+                        }
+                      }}
+                      disabled={deleteProductMutation.isPending}
+                      className="p-2 hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50"
+                    >
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
@@ -533,43 +616,78 @@ export default function AdminDashboard() {
         {/* Orders Tab */}
         {activeTab === "orders" && (
           <div>
-            <h2 className="text-2xl font-bold mb-8">Orders</h2>
+            <h2 className="text-2xl font-bold mb-8">Commandes reçues</h2>
 
             {orders.length === 0 ? (
-              <p className="text-foreground/60">No orders yet</p>
+              <p className="text-foreground/60">Aucune commande pour le moment</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {orders.map((order: any) => (
                   <div
                     key={order.id}
-                    className="border border-foreground/10 p-6 hover:border-accent/50 transition-colors"
+                    className="border-2 border-foreground/10 rounded-lg p-6 hover:border-accent/50 transition-colors bg-card"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    {/* Order Header */}
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-foreground/10">
                       <div>
-                        <h3 className="font-semibold">
-                          Order #{order.orderNumber}
+                        <h3 className="text-lg font-bold">
+                          Commande #{order.orderNumber || order.id}
                         </h3>
                         <p className="text-sm text-foreground/60">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          {new Date(order.createdAt).toLocaleDateString('fr-FR')}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">{order.totalAmount} DH</p>
+                        <p className="text-2xl font-bold text-accent">{order.totalAmount} DH</p>
                         <select
                           defaultValue={order.status}
-                          className="text-sm px-2 py-1 border border-foreground/20 bg-background focus:outline-none focus:border-accent capitalize"
+                          className="text-sm px-3 py-1 border border-foreground/20 bg-background rounded focus:outline-none focus:border-accent capitalize mt-2 font-semibold"
                         >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="shipped">Shipped</option>
-                          <option value="delivered">Delivered</option>
-                          <option value="cancelled">Cancelled</option>
+                          <option value="pending">En attente</option>
+                          <option value="confirmed">Confirmée</option>
+                          <option value="shipped">Expédiée</option>
+                          <option value="delivered">Livrée</option>
+                          <option value="cancelled">Annulée</option>
                         </select>
                       </div>
                     </div>
-                    <p className="text-sm text-foreground/60">
-                      Email: {order.email}
-                    </p>
+
+                    {/* Customer Info */}
+                    <div className="grid grid-cols-2 gap-6 mb-6 pb-6 border-b border-foreground/10">
+                      <div>
+                        <p className="text-xs text-foreground/60 font-semibold mb-1">Email</p>
+                        <p className="font-semibold">{order.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-foreground/60 font-semibold mb-1">Adresse de livraison</p>
+                        <p className="font-semibold text-sm">
+                          {typeof order.shippingAddress === 'string' 
+                            ? order.shippingAddress 
+                            : JSON.stringify(order.shippingAddress, null, 2)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div>
+                      <p className="text-sm font-semibold text-foreground/70 mb-3">Articles:</p>
+                      <div className="space-y-2 ml-2">
+                        {/* Note: Order items would need to be fetched separately */}
+                        <p className="text-sm text-foreground/60 italic">
+                          Les articles de la commande seront affichés ici
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Contact */}
+                    <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <p className="text-sm font-semibold text-green-900 mb-2">
+                        💬 Envoyer par WhatsApp: +212627485020
+                      </p>
+                      <p className="text-xs text-green-700">
+                        Les détails de cette commande seront envoyés à votre numéro WhatsApp
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>

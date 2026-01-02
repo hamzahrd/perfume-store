@@ -18,11 +18,10 @@ export default function Products() {
   });
 
   const categories = [
-    { name: "All", value: "all" },
-    { name: "Men", value: "men" },
-    { name: "Women", value: "women" },
-    { name: "Unisex", value: "unisex" },
-    { name: "Packs", value: "pack" },
+    { name: "Tous", value: "all" },
+    { name: "Hommes", value: "men" },
+    { name: "Femmes", value: "women" },
+    { name: "Unisexe", value: "unisex" },
   ];
 
   const filteredProducts = useMemo(() => {
@@ -48,11 +47,12 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background border-b border-foreground/10">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-foreground/10">
         <div className="container py-4">
           <Link href="/">
-            <a className="text-2xl font-bold tracking-tight font-serif mb-4">
-              PERFUME
+            <a className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <span className="bg-accent text-accent-foreground px-3 py-1 rounded font-serif">MZ</span>
+              <span className="font-serif">MAZAYA</span>
             </a>
           </Link>
 
@@ -189,7 +189,7 @@ export default function Products() {
                           <img 
                             src={product.imageUrl} 
                             alt={product.name} 
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain p-4"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.onerror = null;

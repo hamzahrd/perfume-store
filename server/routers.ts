@@ -18,6 +18,7 @@ import {
   addOrderItem,
   getOrderItems,
 } from "./db";
+import { WhatsAppService } from "./whatsapp";
 import { generateAccessToken, generateRefreshToken } from "./_core/jwt";
 import { registerUser, authenticateUser, updateUserLastSignedIn } from "./auth-db";
 import { validatePassword } from "./_core/password";
@@ -190,6 +191,82 @@ export const appRouter = router({
 
         return { success: true, id: (result as any).insertId };
       }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1),
+          description: z.string().min(1),
+          category: z.string().min(1),
+          price: z.number().min(0),
+          discountPrice: z.number().min(0).nullable().optional(),
+          imageUrl: z.string().min(1),
+          imageGallery: z.array(z.string().min(1)).optional(),
+          sizes: z.array(z.string()),
+          topNotes: z.string().optional(),  
+          heartNotes: z.string().optional(),
+          baseNotes: z.string().optional(),
+          stock: z.number().min(0),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Only admins can update products
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Only admins can update products");
+        }
+
+        const db = await import("./db").then(m => m.getDb());
+        if (!db) throw new Error("Database not available");
+
+        const { products } = await import("../drizzle/schema").then(m => ({
+          products: m.products
+        }));
+        const { eq } = await import("drizzle-orm");
+
+        await db.update(products)
+          .set({
+            name: input.name,
+            description: input.description,
+            category: input.category as any,
+            price: input.price.toString(),
+            discountPrice: input.discountPrice?.toString() || null,
+            imageUrl: input.imageUrl,
+            imageGallery: input.imageGallery ? JSON.stringify(input.imageGallery) : null,
+            sizes: JSON.stringify(input.sizes),
+            topNotes: input.topNotes,
+            heartNotes: input.heartNotes,
+            baseNotes: input.baseNotes,
+            stock: input.stock,
+          })
+          .where(eq(products.id, input.id));
+
+        return { success: true, id: input.id };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Only admins can delete products
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Only admins can delete products");
+        }
+
+        const db = await import("./db").then(m => m.getDb());
+        if (!db) throw new Error("Database not available");
+
+        const { products } = await import("../drizzle/schema").then(m => ({
+          products: m.products
+        }));
+        const { eq } = await import("drizzle-orm");
+
+        // Soft delete by setting isActive to false
+        await db.update(products)
+          .set({ isActive: false })
+          .where(eq(products.id, input.id));
+
+        return { success: true };
+      }),
   }),
 
   // Cart router
@@ -233,6 +310,9 @@ export const appRouter = router({
         z.object({
           totalAmount: z.number(),
           shippingAddress: z.any(),
+          customerName: z.string().optional(),
+          customerCity: z.string().optional(),
+          customerPhone: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -242,7 +322,51 @@ export const appRouter = router({
           input.shippingAddress,
           ctx.user.email || ""
         );
+        
+        // Get order items
+        const orderItems = await getOrderItems(order.id);
+        
+        // Send WhatsApp notification with customer info
+        const customerInfo = {
+          name: input.customerName || ctx.user.name || "",
+          city: input.customerCity || "",
+          phone: input.customerPhone || "",
+        };
+        
+        await sendOrderToWhatsApp(order, orderItems, customerInfo);
+        
         return order;
+      }),
+
+    sendToWhatsApp: protectedProcedure
+      .input(
+        z.object({
+          orderId: z.number(),
+          customerName: z.string(),
+          customerCity: z.string(),
+          customerPhone: z.string(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Only admins can send messages
+        if (ctx.user?.role !== "admin") {
+          throw new Error("Only admins can send WhatsApp messages");
+        }
+
+        const order = await getOrderById(input.orderId);
+        if (!order) {
+          throw new Error("Order not found");
+        }
+
+        const orderItems = await getOrderItems(input.orderId);
+        const customerInfo = {
+          name: input.customerName,
+          city: input.customerCity,
+          phone: input.customerPhone,
+        };
+
+        const success = await sendOrderToWhatsApp(order, orderItems, customerInfo);
+        return { success };
       }),
 
     getById: publicProcedure
@@ -273,5 +397,54 @@ export const appRouter = router({
       }),
   }),
 });
+
+// Helper function to send order to WhatsApp
+async function sendOrderToWhatsApp(
+  order: any,
+  orderItems: any[],
+  customerInfo: { name: string; city: string; phone: string }
+): Promise<boolean> {
+  try {
+    // Get the admin WhatsApp number from environment
+    const adminWhatsAppNumber = process.env.WHATSAPP_ADMIN_NUMBER || "+212627485020";
+    
+    // Create formatted message
+    let message = `📦 *NOUVELLE COMMANDE* 📦\n\n`;
+    message += `*Numéro de commande:* ${order.orderNumber || order.id}\n`;
+    message += `*Montant total:* ${order.totalAmount} DH\n\n`;
+    
+    message += `*Informations client:*\n`;
+    message += `👤 *Nom:* ${customerInfo.name}\n`;
+    message += `📍 *Ville:* ${customerInfo.city}\n`;
+    message += `📞 *Téléphone:* ${customerInfo.phone}\n`;
+    message += `📧 *Email:* ${order.email}\n\n`;
+    
+    message += `*Articles commandés:*\n`;
+    orderItems.forEach((item: any, index: number) => {
+      message += `${index + 1}. ${item.product?.name || 'Produit'} - ${item.quantity}x (${item.quantity * parseFloat(item.product?.price || 0)} DH)\n`;
+    });
+    
+    message += `\n*Adresse de livraison:*\n`;
+    if (typeof order.shippingAddress === 'string') {
+      message += order.shippingAddress;
+    } else {
+      message += JSON.stringify(order.shippingAddress, null, 2);
+    }
+    
+    message += `\n\n⏰ *Date de commande:* ${new Date(order.createdAt || Date.now()).toLocaleString('fr-FR')}`;
+    
+    console.log(`\n📱 WhatsApp Message to ${adminWhatsAppNumber}:\n${message}\n`);
+    
+    // In production, integrate with WhatsApp Business API or Twilio
+    // For now, just log it and store it
+    // TODO: Implement actual WhatsApp Business API integration
+    // const success = await WhatsAppService.sendMessage(adminWhatsAppNumber, message);
+    
+    return true;
+  } catch (error) {
+    console.error('Error sending WhatsApp notification:', error);
+    return false;
+  }
+}
 
 export type AppRouter = typeof appRouter;

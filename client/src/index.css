@@ -233,7 +233,8 @@
   }
 
   .product-image-container {
-    @apply aspect-square bg-foreground/5 flex items-center justify-center transition-transform duration-500 hover:scale-105;
+    @apply aspect-square flex items-center justify-center transition-transform duration-500 hover:scale-105;
+    background-color: #f5f3ed;
   }
 
   /* Hero gradient */

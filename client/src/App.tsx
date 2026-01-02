@@ -13,6 +13,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import AdminDashboard from "./pages/AdminDashboard";
 import SignIn from "./pages/SignIn";
 import Register from "./pages/Register";
+import PackSelection from "./pages/PackSelection";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/cart" component={Cart} />
       <Route path="/account" component={Account} />
+      <Route path="/pack-selection" component={PackSelection} />
       <Route path="/order-confirmation/:id" component={OrderConfirmation} />
       <Route path="/login" component={SignIn} />
       <Route path="/register" component={Register} />
