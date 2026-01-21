@@ -26,7 +26,7 @@ export default function SignIn() {
       if (role === "admin") {
         setLocation("/admin");
       } else {
-        setLocation("/account");
+        setLocation("/");
       }
     },
     onError: (error) => {
@@ -58,8 +58,9 @@ export default function SignIn() {
       <header className="sticky top-0 z-40 bg-background border-b border-foreground/10">
         <div className="container py-4 flex items-center justify-between">
           <Link href="/">
-            <a className="text-2xl font-bold tracking-tight font-serif">
-              PERFUME
+            <a className="text-2xl font-bold tracking-tight flex items-center gap-2 hover:opacity-70 transition-opacity">
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
+              <span className="font-serif text-accent">MAZAYA</span>
             </a>
           </Link>
           <Link href="/">

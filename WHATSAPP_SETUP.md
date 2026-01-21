@@ -1,52 +1,60 @@
-# WhatsApp Payment Integration Setup
+# WhatsApp Notification Setup (FREE)
 
-## Environment Variables
+## Quick Setup (5 minutes)
 
-To configure the WhatsApp payment notification system, add the following environment variables to your `.env` file:
+This uses **CallMeBot** - a free service to receive WhatsApp notifications.
+
+### Step 1: Activate CallMeBot on your WhatsApp
+
+1. **Add this number to your phone contacts:** `+34 644 71 83 99`
+2. **Open WhatsApp** and send this exact message to that number:
+   ```
+   I allow callmebot to send me messages
+   ```
+3. **Wait for the response** - You'll receive an API key like: `123456`
+
+### Step 2: Configure Environment Variables
+
+Add these to your `.env` file:
 
 ```env
-# WhatsApp Business API Configuration
-WHATSAPP_BUSINESS_PHONE=1234567890    # Your WhatsApp business phone number
+# Your phone number with country code (no + or spaces)
+# Example for Morocco: 212627485020
+WHATSAPP_ADMIN_NUMBER=212XXXXXXXXX
 
-# For Twilio WhatsApp API (recommended)
-TWILIO_ACCOUNT_SID=your_account_sid    # Your Twilio Account SID
-TWILIO_AUTH_TOKEN=your_auth_token      # Your Twilio Auth Token
-TWILIO_WHATSAPP_NUMBER=whatsapp_number # Your Twilio WhatsApp-enabled number (format: +1234567890)
+# The API key you received from CallMeBot
+CALLMEBOT_API_KEY=your_api_key_here
 ```
+
+### Step 3: Restart the Server
+
+After adding the environment variables, restart your server to apply the changes.
 
 ## How It Works
 
-When a customer places an order through the e-commerce store, the system automatically sends a WhatsApp notification to the configured phone number with the following information:
-
+When a customer places an order, you'll automatically receive a WhatsApp message with:
 - Order number
 - Total amount
-- Order status
-- Customer email
-- Order items (product names, quantities, sizes)
-- Shipping address
+- Customer name, city, and phone
+- Ordered items
+- Delivery address
 
-## Setup Options
+## Troubleshooting
 
-### Option 1: Twilio WhatsApp API (Recommended)
+### Not receiving messages?
+1. Make sure you sent the activation message to CallMeBot
+2. Check that your phone number format is correct (no + or spaces)
+3. Verify the API key is correct
+4. Check the server logs for any errors
 
-1. Sign up for a [Twilio account](https://www.twilio.com/)
-2. Purchase a phone number with WhatsApp capability
-3. Configure the environment variables as shown above
-4. The system will automatically send order notifications via WhatsApp
-
-### Option 2: Custom WhatsApp Business API
-
-You can modify the `server/whatsapp.ts` file to integrate with other WhatsApp Business API providers by updating the `sendOrderNotification` method.
+### Message limit
+CallMeBot has a limit of ~25 messages per day on the free plan. For higher volumes, consider:
+- Twilio WhatsApp API (paid)
+- WhatsApp Business API (requires approval)
 
 ## Testing
 
-For testing purposes, if no WhatsApp configuration is provided, the system will log the message to the console instead of sending actual WhatsApp messages.
-
-## Security
-
-- Keep your API credentials secure and never commit them to version control
-- Use environment variables for all sensitive information
-- Regularly rotate your API tokens for security
+To test, place a test order on your website. You should receive a WhatsApp message within a few seconds.
 
 ## Troubleshooting
 

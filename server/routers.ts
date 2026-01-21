@@ -12,9 +12,12 @@ import {
   removeFromCart,
   updateCartItem,
   createOrder,
+  createGuestOrder,
   getOrderById,
   getUserOrders,
+  getAllOrders,
   updateOrderStatus,
+  deleteOrder,
   addOrderItem,
   getOrderItems,
 } from "./db";
@@ -323,6 +326,10 @@ export const appRouter = router({
           ctx.user.email || ""
         );
         
+        if (!order) {
+          throw new Error("Failed to create order");
+        }
+        
         // Get order items
         const orderItems = await getOrderItems(order.id);
         
@@ -331,6 +338,49 @@ export const appRouter = router({
           name: input.customerName || ctx.user.name || "",
           city: input.customerCity || "",
           phone: input.customerPhone || "",
+        };
+        
+        await sendOrderToWhatsApp(order, orderItems, customerInfo);
+        
+        return order;
+      }),
+    
+    createGuest: publicProcedure
+      .input(
+        z.object({
+          productIds: z.array(z.number()),
+          totalAmount: z.number(),
+          customerName: z.string(),
+          customerCity: z.string(),
+          customerPhone: z.string(),
+          customerAddress: z.string().optional(),
+          customerEmail: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        console.log("Creating guest order with:", input);
+        const order = await createGuestOrder(
+          input.productIds,
+          input.totalAmount,
+          input.customerName,
+          input.customerCity,
+          input.customerPhone,
+          input.customerAddress || "",
+          input.customerEmail || ""
+        );
+        
+        if (!order) {
+          throw new Error("Failed to create order");
+        }
+        
+        // Get order items
+        const orderItems = await getOrderItems(order.id);
+        
+        // Send WhatsApp notification
+        const customerInfo = {
+          name: input.customerName,
+          city: input.customerCity,
+          phone: input.customerPhone,
         };
         
         await sendOrderToWhatsApp(order, orderItems, customerInfo);
@@ -376,24 +426,56 @@ export const appRouter = router({
       }),
 
     getUserOrders: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role === "admin") {
+        return getAllOrders();
+      }
       return getUserOrders(ctx.user.id);
     }),
 
-    getItems: publicProcedure
-      .input(z.object({ orderId: z.number() }))
-      .query(async ({ input }) => {
-        return getOrderItems(input.orderId);
-      }),
-
     updateStatus: protectedProcedure
-      .input(z.object({ orderId: z.number(), status: z.string() }))
+      .input(
+        z.object({
+          orderId: z.number(),
+          status: z.string(),
+        })
+      )
       .mutation(async ({ ctx, input }) => {
-        // Only admins can update order status
         if (ctx.user.role !== "admin") {
           throw new Error("Unauthorized");
         }
         await updateOrderStatus(input.orderId, input.status);
         return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ orderId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") {
+          throw new Error("Unauthorized");
+        }
+        await deleteOrder(input.orderId);
+        return { success: true };
+      }),
+
+    getByOrderNumber: publicProcedure
+      .input(z.object({ orderNumber: z.string() }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return null;
+        const { eq } = await import("drizzle-orm");
+        const { orders } = await import("../drizzle/schema");
+        const result = await db
+          .select()
+          .from(orders)
+          .where(eq(orders.orderNumber, input.orderNumber))
+          .limit(1);
+        return result.length > 0 ? result[0] : null;
+      }),
+
+    getItems: publicProcedure
+      .input(z.object({ orderId: z.number() }))
+      .query(async ({ input }) => {
+        return getOrderItems(input.orderId);
       }),
   }),
 });
@@ -405,42 +487,9 @@ async function sendOrderToWhatsApp(
   customerInfo: { name: string; city: string; phone: string }
 ): Promise<boolean> {
   try {
-    // Get the admin WhatsApp number from environment
-    const adminWhatsAppNumber = process.env.WHATSAPP_ADMIN_NUMBER || "+212627485020";
-    
-    // Create formatted message
-    let message = `📦 *NOUVELLE COMMANDE* 📦\n\n`;
-    message += `*Numéro de commande:* ${order.orderNumber || order.id}\n`;
-    message += `*Montant total:* ${order.totalAmount} DH\n\n`;
-    
-    message += `*Informations client:*\n`;
-    message += `👤 *Nom:* ${customerInfo.name}\n`;
-    message += `📍 *Ville:* ${customerInfo.city}\n`;
-    message += `📞 *Téléphone:* ${customerInfo.phone}\n`;
-    message += `📧 *Email:* ${order.email}\n\n`;
-    
-    message += `*Articles commandés:*\n`;
-    orderItems.forEach((item: any, index: number) => {
-      message += `${index + 1}. ${item.product?.name || 'Produit'} - ${item.quantity}x (${item.quantity * parseFloat(item.product?.price || 0)} DH)\n`;
-    });
-    
-    message += `\n*Adresse de livraison:*\n`;
-    if (typeof order.shippingAddress === 'string') {
-      message += order.shippingAddress;
-    } else {
-      message += JSON.stringify(order.shippingAddress, null, 2);
-    }
-    
-    message += `\n\n⏰ *Date de commande:* ${new Date(order.createdAt || Date.now()).toLocaleString('fr-FR')}`;
-    
-    console.log(`\n📱 WhatsApp Message to ${adminWhatsAppNumber}:\n${message}\n`);
-    
-    // In production, integrate with WhatsApp Business API or Twilio
-    // For now, just log it and store it
-    // TODO: Implement actual WhatsApp Business API integration
-    // const success = await WhatsAppService.sendMessage(adminWhatsAppNumber, message);
-    
-    return true;
+    // Use the WhatsApp service
+    const { WhatsAppService } = await import('./whatsapp');
+    return await WhatsAppService.sendOrderNotification(order, orderItems, customerInfo);
   } catch (error) {
     console.error('Error sending WhatsApp notification:', error);
     return false;

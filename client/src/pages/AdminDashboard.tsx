@@ -1,17 +1,26 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ChevronLeft, Plus, Edit, Trash2, Package, ShoppingBag, Upload } from "lucide-react";
+import { ChevronLeft, Plus, Edit, Trash2, Package, ShoppingBag, Upload, Eye, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState("products");
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [viewingProduct, setViewingProduct] = useState<any>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [productForm, setProductForm] = useState({
     name: "",
     description: "",
@@ -31,6 +40,11 @@ export default function AdminDashboard() {
   const { data: orders = [] } = trpc.orders.getUserOrders.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
   });
+
+  const { data: orderItems = [] } = trpc.orders.getItems.useQuery(
+    { orderId: expandedOrderId || 0 },
+    { enabled: expandedOrderId !== null }
+  );
 
   const utils = trpc.useUtils();
 
@@ -95,6 +109,29 @@ export default function AdminDashboard() {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to delete product");
+    },
+  });
+
+  const updateOrderStatusMutation = trpc.orders.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Statut de la commande mis à jour!");
+      utils.orders.getUserOrders.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la mise à jour du statut");
+      console.error(error);
+    },
+  });
+
+  const deleteOrderMutation = trpc.orders.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Commande supprimée avec succès!");
+      utils.orders.getUserOrders.invalidate();
+      setExpandedOrderId(null);
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la suppression");
+      console.error(error);
     },
   });
 
@@ -250,8 +287,9 @@ export default function AdminDashboard() {
       <header className="sticky top-0 z-40 bg-background border-b border-foreground/10">
         <div className="container py-4 flex items-center justify-between">
           <Link href="/">
-            <a className="text-2xl font-bold tracking-tight font-serif">
-              PERFUME
+            <a className="text-2xl font-bold tracking-tight flex items-center gap-2 hover:opacity-70 transition-opacity">
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
+              <span className="font-serif text-accent">MAZAYA</span>
             </a>
           </Link>
           <span className="text-sm text-accent font-semibold">Admin</span>
@@ -270,20 +308,29 @@ export default function AdminDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="border border-foreground/10 p-6">
+          <button
+            onClick={() => setActiveTab("products")}
+            className="border border-foreground/10 p-6 hover:border-accent hover:bg-accent/5 transition-all cursor-pointer text-left rounded-lg"
+          >
             <p className="text-sm text-foreground/60 mb-2">Total Products</p>
             <p className="text-3xl font-bold">{products.length}</p>
-          </div>
-          <div className="border border-foreground/10 p-6">
+          </button>
+          <button
+            onClick={() => setActiveTab("orders")}
+            className="border border-foreground/10 p-6 hover:border-accent hover:bg-accent/5 transition-all cursor-pointer text-left rounded-lg"
+          >
             <p className="text-sm text-foreground/60 mb-2">Total Orders</p>
             <p className="text-3xl font-bold">{orders.length}</p>
-          </div>
-          <div className="border border-foreground/10 p-6">
+          </button>
+          <button
+            onClick={() => setActiveTab("orders")}
+            className="border border-foreground/10 p-6 hover:border-accent hover:bg-accent/5 transition-all cursor-pointer text-left rounded-lg"
+          >
             <p className="text-sm text-foreground/60 mb-2">Pending Orders</p>
             <p className="text-3xl font-bold">
               {orders.filter((o: any) => o.status === "pending").length}
             </p>
-          </div>
+          </button>
         </div>
 
         {/* Tabs */}
@@ -562,6 +609,12 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex gap-2">
                     <button
+                      onClick={() => setViewingProduct(product)}
+                      className="p-2 hover:bg-foreground/5 transition-colors"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                    <button
                       onClick={() => {
                         setEditingProduct(product);
                         // Parse sizes and imageGallery if they're strings
@@ -629,26 +682,46 @@ export default function AdminDashboard() {
                   >
                     {/* Order Header */}
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-foreground/10">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-lg font-bold">
                           Commande #{order.orderNumber || order.id}
                         </h3>
                         <p className="text-sm text-foreground/60">
-                          {new Date(order.createdAt).toLocaleDateString('fr-FR')}
+                          {new Date(order.createdAt).toLocaleDateString('fr-FR')} à {new Date(order.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-accent">{order.totalAmount} DH</p>
-                        <select
-                          defaultValue={order.status}
-                          className="text-sm px-3 py-1 border border-foreground/20 bg-background rounded focus:outline-none focus:border-accent capitalize mt-2 font-semibold"
+                      <div className="text-right flex items-start gap-3">
+                        <div>
+                          <p className="text-2xl font-bold text-accent">{order.totalAmount} DH</p>
+                          <select
+                            value={order.status}
+                            onChange={(e) => {
+                              updateOrderStatusMutation.mutate({
+                                orderId: order.id,
+                                status: e.target.value as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled",
+                              });
+                            }}
+                            className="text-sm px-3 py-1 border border-foreground/20 bg-background rounded focus:outline-none focus:border-accent capitalize mt-2 font-semibold"
+                          >
+                            <option value="pending">En attente</option>
+                            <option value="confirmed">Confirmée</option>
+                            <option value="shipped">Expédiée</option>
+                            <option value="delivered">Livrée</option>
+                            <option value="cancelled">Annulée</option>
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Êtes-vous sûr de vouloir supprimer la commande #${order.orderNumber || order.id}?`)) {
+                              deleteOrderMutation.mutate({ orderId: order.id });
+                            }
+                          }}
+                          disabled={deleteOrderMutation.isPending}
+                          className="p-2 hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50 rounded"
+                          title="Supprimer la commande"
                         >
-                          <option value="pending">En attente</option>
-                          <option value="confirmed">Confirmée</option>
-                          <option value="shipped">Expédiée</option>
-                          <option value="delivered">Livrée</option>
-                          <option value="cancelled">Annulée</option>
-                        </select>
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
 
@@ -659,23 +732,73 @@ export default function AdminDashboard() {
                         <p className="font-semibold">{order.email}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-foreground/60 font-semibold mb-1">Adresse de livraison</p>
-                        <p className="font-semibold text-sm">
-                          {typeof order.shippingAddress === 'string' 
-                            ? order.shippingAddress 
-                            : JSON.stringify(order.shippingAddress, null, 2)}
-                        </p>
+                        <p className="text-xs text-foreground/60 font-semibold mb-1">Informations de livraison</p>
+                        <div className="font-semibold text-sm space-y-1">
+                          {(() => {
+                            let shippingInfo;
+                            try {
+                              shippingInfo = typeof order.shippingAddress === 'string' 
+                                ? JSON.parse(order.shippingAddress) 
+                                : order.shippingAddress;
+                            } catch {
+                              return <p>{order.shippingAddress}</p>;
+                            }
+                            
+                            return (
+                              <>
+                                {shippingInfo.name && <p>👤 {shippingInfo.name}</p>}
+                                {shippingInfo.phone && <p>📞 {shippingInfo.phone}</p>}
+                                {shippingInfo.address && <p>📍 {shippingInfo.address}</p>}
+                                {shippingInfo.city && <p>🏙️ {shippingInfo.city}</p>}
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </div>
 
                     {/* Order Items */}
                     <div>
-                      <p className="text-sm font-semibold text-foreground/70 mb-3">Articles:</p>
+                      <button
+                        onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                        className="text-sm font-semibold text-foreground/70 mb-3 hover:text-accent transition-colors flex items-center gap-2"
+                      >
+                        <span>{expandedOrderId === order.id ? "▼" : "▶"}</span>
+                        Articles ({expandedOrderId === order.id ? orderItems.length : "?"})
+                      </button>
                       <div className="space-y-2 ml-2">
-                        {/* Note: Order items would need to be fetched separately */}
-                        <p className="text-sm text-foreground/60 italic">
-                          Les articles de la commande seront affichés ici
-                        </p>
+                        {expandedOrderId === order.id && orderItems.length > 0 ? (
+                          orderItems.map((item: any) => (
+                            <div key={item.id} className="bg-foreground/5 p-3 rounded border border-foreground/10">
+                              <div className="flex items-center gap-4">
+                                {item.product?.imageUrl && (
+                                  <img 
+                                    src={item.product.imageUrl} 
+                                    alt={item.product?.name} 
+                                    className="w-10 h-10 object-contain rounded"
+                                  />
+                                )}
+                                <div className="flex-1">
+                                  <p className="font-semibold">{item.product?.name || "Produit"}</p>
+                                  <p className="text-xs text-foreground/60">
+                                    Quantité: {item.quantity} × {item.unitPrice} MAD
+                                  </p>
+                                </div>
+                                <p className="font-bold text-accent">
+                                  {(item.quantity * parseFloat(item.unitPrice || 0)).toFixed(2)} MAD
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        ) : expandedOrderId === order.id ? (
+                          <p className="text-sm text-foreground/60 italic">
+                            Aucun article trouvé
+                          </p>
+                        ) : (
+                          <p className="text-sm text-foreground/60 italic">
+                            Cliquez pour voir les articles
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -695,6 +818,129 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* View Product Dialog */}
+      <Dialog open={!!viewingProduct} onOpenChange={(open) => !open && setViewingProduct(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">{viewingProduct?.name}</DialogTitle>
+            <DialogDescription className="capitalize text-base">
+              {viewingProduct?.category}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewingProduct && (
+            <div className="space-y-6 mt-4">
+              {/* Product Image */}
+              {viewingProduct.imageUrl && (
+                <div className="w-full aspect-square rounded-lg overflow-hidden bg-foreground/5">
+                  <img 
+                    src={viewingProduct.imageUrl} 
+                    alt={viewingProduct.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+
+              {/* Image Gallery */}
+              {(() => {
+                const imageGallery = viewingProduct.imageGallery 
+                  ? (typeof viewingProduct.imageGallery === 'string' 
+                      ? JSON.parse(viewingProduct.imageGallery) 
+                      : viewingProduct.imageGallery)
+                  : [];
+                
+                return imageGallery.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Gallery</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {imageGallery.map((url: string, idx: number) => (
+                        <img 
+                          key={idx}
+                          src={url} 
+                          alt={`${viewingProduct.name} ${idx + 1}`}
+                          className="w-full aspect-square object-cover rounded-lg"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Price */}
+              <div>
+                <h4 className="font-semibold mb-2">Price</h4>
+                <div className="flex items-center gap-3">
+                  <p className="text-3xl font-bold text-accent">{viewingProduct.price} DH</p>
+                  {viewingProduct.discountPrice && (
+                    <p className="text-xl text-foreground/50 line-through">{viewingProduct.discountPrice} DH</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <h4 className="font-semibold mb-2">Description</h4>
+                <p className="text-foreground/80">{viewingProduct.description}</p>
+              </div>
+
+              {/* Stock */}
+              <div>
+                <h4 className="font-semibold mb-2">Stock</h4>
+                <p className="text-lg">{viewingProduct.stock} units</p>
+              </div>
+
+              {/* Sizes */}
+              {(() => {
+                const sizes = typeof viewingProduct.sizes === 'string' 
+                  ? JSON.parse(viewingProduct.sizes) 
+                  : viewingProduct.sizes || [];
+                
+                return sizes.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Available Sizes</h4>
+                    <div className="flex gap-2">
+                      {sizes.map((size: string, idx: number) => (
+                        <span 
+                          key={idx}
+                          className="px-3 py-1 bg-foreground/10 rounded-full text-sm"
+                        >
+                          {size}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Fragrance Notes */}
+              {(viewingProduct.topNotes || viewingProduct.heartNotes || viewingProduct.baseNotes) && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Fragrance Notes</h4>
+                  {viewingProduct.topNotes && (
+                    <div>
+                      <p className="text-sm font-medium text-foreground/70">Top Notes</p>
+                      <p className="text-foreground/80">{viewingProduct.topNotes}</p>
+                    </div>
+                  )}
+                  {viewingProduct.heartNotes && (
+                    <div>
+                      <p className="text-sm font-medium text-foreground/70">Heart Notes</p>
+                      <p className="text-foreground/80">{viewingProduct.heartNotes}</p>
+                    </div>
+                  )}
+                  {viewingProduct.baseNotes && (
+                    <div>
+                      <p className="text-sm font-medium text-foreground/70">Base Notes</p>
+                      <p className="text-foreground/80">{viewingProduct.baseNotes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

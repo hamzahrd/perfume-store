@@ -1,48 +1,86 @@
 import { Order } from "../drizzle/schema";
 
-// Mock WhatsApp API service - in a real implementation, you would integrate with 
-// WhatsApp Business API or a third-party service like Twilio
+// WhatsApp notification service using CallMeBot API (free)
+// Setup instructions:
+// 1. Add +34 644 71 83 99 to your phone contacts
+// 2. Send "I allow callmebot to send me messages" to this number via WhatsApp
+// 3. You'll receive an API key - add it to your .env file as CALLMEBOT_API_KEY
+// 4. Add your phone number (with country code, no +) as WHATSAPP_ADMIN_NUMBER
+
 export class WhatsAppService {
-  static async sendOrderNotification(order: Order, orderItems: any[]): Promise<boolean> {
+  static async sendMessage(phoneNumber: string, message: string): Promise<boolean> {
     try {
-      // Extract phone number from environment or use a default for testing
-      const phoneNumber = process.env.WHATSAPP_BUSINESS_PHONE || "1234567890";
+      const apiKey = process.env.CALLMEBOT_API_KEY;
       
-      // Create the order summary message
-      let message = `📱 *New Order Received!* 📱\n\n`;
-      message += `*Order Number:* ${order.orderNumber}\n`;
-      message += `*Total Amount:* ${order.totalAmount} DH\n`;
-      message += `*Status:* ${order.status}\n`;
-      message += `*Customer Email:* ${order.email}\n\n`;
+      if (!apiKey) {
+        console.log("⚠️ CALLMEBOT_API_KEY not configured. Message logged only:");
+        console.log(`📱 To: ${phoneNumber}\n${message}`);
+        return false;
+      }
+
+      // CallMeBot API endpoint
+      const encodedMessage = encodeURIComponent(message);
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${phoneNumber}&text=${encodedMessage}&apikey=${apiKey}`;
       
-      message += `*Order Items:*\n`;
-      orderItems.forEach((item: any) => {
-        message += `- ${item.product?.name || 'Product'} (Qty: ${item.quantity}, Size: ${item.selectedSize || 'Standard'})\n`;
-      });
+      const response = await fetch(url);
       
-      message += `\n*Shipping Address:*\n${order.shippingAddress}\n\n`;
-      message += `Please process this order as soon as possible!`;
-      
-      console.log(`WhatsApp Message to ${phoneNumber}: ${message}`);
-      
-      // In a real implementation, you would call the WhatsApp Business API here
-      // For now, we'll just log the message as a mock implementation
-      // Example with Twilio WhatsApp API:
-      /*
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const authToken = process.env.TWILIO_AUTH_TOKEN;
-      const client = require('twilio')(accountSid, authToken);
-      
-      await client.messages.create({
-        body: message,
-        from: `whatsapp:+${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        to: `whatsapp:+${phoneNumber}`
-      });
-      */
-      
-      return true;
+      if (response.ok) {
+        console.log(`✅ WhatsApp message sent successfully to ${phoneNumber}`);
+        return true;
+      } else {
+        console.error(`❌ Failed to send WhatsApp message: ${response.statusText}`);
+        return false;
+      }
     } catch (error) {
       console.error('Error sending WhatsApp notification:', error);
+      return false;
+    }
+  }
+
+  static async sendOrderNotification(order: Order, orderItems: any[], customerInfo?: { name: string; city: string; phone: string }): Promise<boolean> {
+    try {
+      const phoneNumber = process.env.WHATSAPP_ADMIN_NUMBER || "";
+      
+      if (!phoneNumber) {
+        console.log("⚠️ WHATSAPP_ADMIN_NUMBER not configured");
+        return false;
+      }
+
+      // Create the order summary message
+      let message = `🛒 *NOUVELLE COMMANDE!*\n\n`;
+      message += `📦 *N°:* ${order.orderNumber || order.id}\n`;
+      message += `💰 *Total:* ${order.totalAmount} DH\n\n`;
+      
+      if (customerInfo) {
+        message += `👤 *Client:* ${customerInfo.name}\n`;
+        message += `🏙️ *Ville:* ${customerInfo.city}\n`;
+        message += `📞 *Tél:* ${customerInfo.phone}\n\n`;
+      }
+      
+      message += `*Articles:*\n`;
+      orderItems.forEach((item: any, i: number) => {
+        message += `${i + 1}. ${item.product?.name || 'Produit'} x${item.quantity}\n`;
+      });
+      
+      // Parse shipping address
+      let addressText = "";
+      try {
+        const addr = typeof order.shippingAddress === 'string' 
+          ? JSON.parse(order.shippingAddress) 
+          : order.shippingAddress;
+        if (addr.address) addressText = addr.address;
+        if (addr.city) addressText += `, ${addr.city}`;
+      } catch {
+        addressText = String(order.shippingAddress);
+      }
+      
+      if (addressText) {
+        message += `\n📍 *Adresse:* ${addressText}`;
+      }
+
+      return await this.sendMessage(phoneNumber, message);
+    } catch (error) {
+      console.error('Error sending WhatsApp order notification:', error);
       return false;
     }
   }

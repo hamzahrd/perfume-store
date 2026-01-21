@@ -1,35 +1,62 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Search, ShoppingBag, Menu, X, Check } from "lucide-react";
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useMemo } from "react";
+import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: bestSellers } = trpc.products.list.useQuery({ category: "all" });
   const { data: allProducts = [] } = trpc.products.list.useQuery({});
+
+  // Filter products for search suggestions
+  const searchSuggestions = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) return [];
+    const query = searchQuery.toLowerCase();
+    return allProducts
+      .filter((p: any) => p.name.toLowerCase().includes(query))
+      .slice(0, 6); // Limit to 6 suggestions
+  }, [searchQuery, allProducts]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setLocation(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery("");
+    }
+  };
+
+  const handleSelectProduct = (productId: number) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setLocation(`/product/${productId}`);
+  };
 
   const categories = [
     { 
       name: "Parfums Hommes", 
       slug: "men", 
-      image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800",
+      image: "/uploads/home.png",
       description: "Audacieux & Sophistiqués"
     },
     { 
       name: "Parfums Femmes", 
       slug: "women", 
-      image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=800",
+      image: "/uploads/women.png",
       description: "Élégants & Intemporels"
     },
     { 
       name: "Parfums Unisexe", 
       slug: "unisex", 
-      image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=80&w=800",
+      image: "/uploads/unisex.png",
       description: "Pour Tous"
     },
   ];
@@ -65,7 +92,7 @@ export default function Home() {
         <div className="container flex items-center justify-between py-4">
           <Link href="/">
             <a className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <span className="bg-accent text-accent-foreground px-3 py-1 rounded font-serif">MZ</span>
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
               <span className="font-serif">MAZAYA</span>
             </a>
           </Link>
@@ -94,7 +121,10 @@ export default function Home() {
 
           {/* Right Actions */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 hover:bg-foreground/10 transition-colors rounded-full">
+            <button 
+              onClick={() => setSearchOpen(true)}
+              className="p-2 hover:bg-foreground/10 transition-colors rounded-full"
+            >
               <Search className="w-5 h-5" />
             </button>
             <Link href="/cart">
@@ -134,6 +164,101 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Search Overlay */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm">
+          <div className="container py-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold">Rechercher</h2>
+              <button
+                onClick={() => {
+                  setSearchOpen(false);
+                  setSearchQuery("");
+                }}
+                className="p-2 hover:bg-foreground/10 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-foreground/40" />
+              <input
+                type="text"
+                placeholder="Rechercher un parfum..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="w-full pl-14 pr-32 py-4 text-xl border-2 border-foreground/20 bg-background rounded-xl focus:outline-none focus:border-accent transition-colors"
+              />
+              <button
+                type="submit"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-accent text-accent-foreground px-6 py-2 rounded-lg font-semibold hover:bg-accent/90 transition-colors"
+              >
+                Rechercher
+              </button>
+            </form>
+            
+            {/* Search Suggestions */}
+            {searchSuggestions.length > 0 && (
+              <div className="mt-4 bg-card border border-foreground/10 rounded-xl shadow-lg overflow-hidden">
+                <p className="px-4 py-2 text-sm text-foreground/60 border-b border-foreground/10">
+                  Suggestions ({searchSuggestions.length})
+                </p>
+                <div className="divide-y divide-foreground/10">
+                  {searchSuggestions.map((product: any) => (
+                    <button
+                      key={product.id}
+                      onClick={() => handleSelectProduct(product.id)}
+                      className="w-full flex items-center gap-4 p-4 hover:bg-foreground/5 transition-colors text-left"
+                    >
+                      <div className="w-12 h-12 bg-[#f5f3ed] rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {product.imageUrl ? (
+                          <img 
+                            src={product.imageUrl} 
+                            alt={product.name}
+                            className="w-full h-full object-contain p-1"
+                          />
+                        ) : (
+                          <span className="text-2xl">🧴</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{product.name}</p>
+                        <p className="text-sm text-foreground/60">
+                          {product.discountPrice || product.price} DH
+                          {product.discountPrice && (
+                            <span className="ml-2 line-through text-foreground/40">{product.price} DH</span>
+                          )}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-foreground/40" />
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={handleSearch}
+                  className="w-full px-4 py-3 text-sm font-semibold text-accent hover:bg-accent/10 transition-colors border-t border-foreground/10"
+                >
+                  Voir tous les résultats pour "{searchQuery}"
+                </button>
+              </div>
+            )}
+
+            {searchQuery.length >= 2 && searchSuggestions.length === 0 && (
+              <div className="mt-4 p-6 bg-card border border-foreground/10 rounded-xl text-center">
+                <p className="text-foreground/60">Aucun produit trouvé pour "{searchQuery}"</p>
+              </div>
+            )}
+
+            {searchQuery.length < 2 && (
+              <p className="text-sm text-foreground/60 mt-4">
+                Tapez au moins 2 caractères pour voir les suggestions
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Pack Offer Banner */}
       <section className="relative overflow-hidden bg-gradient-to-br from-accent/5 via-background to-accent/10 border-b border-accent/20">
@@ -232,7 +357,7 @@ export default function Home() {
                       <div className="flex-shrink-0 w-6 h-6 bg-accent rounded-full flex items-center justify-center">
                         <span className="text-white text-sm">✓</span>
                       </div>
-                      <span className="font-medium text-foreground/90">Chaque parfum: seulement 39.80 DH</span>
+                      <span className="font-medium text-foreground/90">Chaque parfum: seulement 40 DH</span>
                     </div>
                   </div>
                 </div>

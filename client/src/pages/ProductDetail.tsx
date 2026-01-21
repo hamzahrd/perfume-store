@@ -1,18 +1,24 @@
 import { useState } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import { ChevronLeft, ShoppingBag, Heart } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import CartDrawer from "@/components/CartDrawer";
+import { useGuestCart } from "@/hooks/useGuestCart";
 
 export default function ProductDetail() {
   const params = useParams();
+  const [, setLocation] = useLocation();
   const productId = parseInt(params.id || "0");
   const { user, isAuthenticated } = useAuth();
 
   const [selectedSize, setSelectedSize] = useState("50ml");
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  
+  const guestCart = useGuestCart();
 
   const { data: product, isLoading } = trpc.products.getById.useQuery({
     id: productId,
@@ -21,36 +27,61 @@ export default function ProductDetail() {
   const { data: relatedProducts = [] } = trpc.products.list.useQuery({
     category: product?.category === 'all' ? undefined : product?.category,
   }, {
-    enabled: !!product?.category, // Only fetch when product data is available
+    enabled: !!product?.category,
   });
+
+  const utils = trpc.useUtils();
 
   const addToCartMutation = trpc.cart.addItem.useMutation({
     onSuccess: () => {
-      toast.success("Added to cart!");
-      setQuantity(1);
+      // Invalidate cart query to refresh cart data
+      utils.cart.getItems.invalidate();
     },
     onError: () => {
-      toast.error("Please sign in to add items to cart");
+      toast.error("Erreur lors de l'ajout au panier");
     },
   });
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to add items to cart");
-      return;
+    // Show immediate feedback
+    toast.success("Ajouté au panier! 🎁");
+    setIsCartDrawerOpen(true);
+    
+    if (isAuthenticated) {
+      // Authenticated users: add to database cart
+      addToCartMutation.mutate({
+        productId,
+        quantity,
+        selectedSize,
+      });
+    } else {
+      // Guest users: add to local storage cart
+      guestCart.addItem(productId, quantity, selectedSize);
     }
+  };
 
-    addToCartMutation.mutate({
-      productId,
-      quantity,
-      selectedSize,
-    });
+  const handleBuyNow = () => {
+    if (isAuthenticated) {
+      addToCartMutation.mutate({
+        productId,
+        quantity,
+        selectedSize,
+      }, {
+        onSuccess: () => {
+          setLocation("/cart?checkout=true");
+        }
+      });
+    } else {
+      // Guest users: add to cart and go to checkout
+      guestCart.addItem(productId, quantity, selectedSize);
+      setLocation("/cart?checkout=true");
+    }
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-foreground/60">Loading...</p>
+        <p className="text-foreground/60">Chargement...</p>
       </div>
     );
   }
@@ -62,10 +93,10 @@ export default function ProductDetail() {
           <Link href="/products">
             <a className="flex items-center gap-2 text-accent hover:text-accent/80 transition-colors mb-8">
               <ChevronLeft className="w-5 h-5" />
-              Back to Products
+              Retour aux produits
             </a>
           </Link>
-          <p className="text-lg text-foreground/60">Product not found</p>
+          <p className="text-lg text-foreground/60">Produit introuvable</p>
         </div>
       </div>
     );
@@ -75,26 +106,29 @@ export default function ProductDetail() {
     try {
       if (typeof product.sizes === "string") {
         const parsed = JSON.parse(product.sizes);
-        return Array.isArray(parsed) ? parsed : ["30ml", "50ml", "100ml"];
+        return Array.isArray(parsed) ? parsed : ["50ml"];
       } else if (Array.isArray(product.sizes)) {
         return product.sizes;
       } else {
-        return ["30ml", "50ml", "100ml"];
+        return ["50ml"];
       }
     } catch (e) {
       console.error("Error parsing sizes:", e);
-      return ["30ml", "50ml", "100ml"];
+      return ["50ml"];
     }
   })();
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Cart Drawer */}
+      <CartDrawer isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background border-b border-foreground/10">
         <div className="container py-4 flex items-center justify-between">
           <Link href="/">
             <a className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <span className="bg-accent text-accent-foreground px-3 py-1 rounded font-serif">MZ</span>
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
               <span className="font-serif">MAZAYA</span>
             </a>
           </Link>
@@ -111,7 +145,7 @@ export default function ProductDetail() {
         <Link href="/products">
           <a className="flex items-center gap-2 text-accent hover:text-accent/80 transition-colors mb-8">
             <ChevronLeft className="w-5 h-5" />
-            Back to Products
+            Retour aux produits
           </a>
         </Link>
 
@@ -146,7 +180,7 @@ export default function ProductDetail() {
                 const allImages = product.imageUrl ? [product.imageUrl, ...imageGallery] : imageGallery;
                 
                 return allImages.length > 0 
-                  ? allImages.slice(0, 4).map((imgUrl, index) => (
+                  ? allImages.slice(0, 4).map((imgUrl: string, index: number) => (
                       <button
                         key={index}
                         className="aspect-square bg-[#f5f3ed] border border-foreground/10 flex items-center justify-center hover:border-accent transition-colors rounded"
@@ -180,7 +214,7 @@ export default function ProductDetail() {
             {/* Header */}
             <div className="mb-8">
               <p className="text-sm text-foreground/60 mb-2 uppercase tracking-widest">
-                {product.category}
+                {product.category === 'men' ? 'HOMME' : product.category === 'women' ? 'FEMME' : 'UNISEXE'}
               </p>
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 {product.name}
@@ -207,7 +241,7 @@ export default function ProductDetail() {
                   {product.topNotes && (
                     <div>
                       <p className="text-xs text-foreground/60 uppercase tracking-widest mb-2">
-                        Top Notes
+                        Notes de Tête
                       </p>
                       <p className="text-sm font-semibold">{product.topNotes}</p>
                     </div>
@@ -215,7 +249,7 @@ export default function ProductDetail() {
                   {product.heartNotes && (
                     <div>
                       <p className="text-xs text-foreground/60 uppercase tracking-widest mb-2">
-                        Heart Notes
+                        Notes de Cœur
                       </p>
                       <p className="text-sm font-semibold">{product.heartNotes}</p>
                     </div>
@@ -223,7 +257,7 @@ export default function ProductDetail() {
                   {product.baseNotes && (
                     <div>
                       <p className="text-xs text-foreground/60 uppercase tracking-widest mb-2">
-                        Base Notes
+                        Notes de Fond
                       </p>
                       <p className="text-sm font-semibold">{product.baseNotes}</p>
                     </div>
@@ -281,25 +315,35 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Add to Cart Button */}
-            <div className="flex gap-4">
+            {/* Add to Cart Buttons */}
+            <div className="space-y-3">
               <button
                 onClick={handleAddToCart}
-                disabled={(product.stock ?? 0) === 0 || addToCartMutation.isPending}
-                className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground px-8 py-4 rounded-xl font-bold text-lg hover:from-accent/90 hover:to-accent/70 transition-all hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-3"
+                disabled={addToCartMutation.isPending}
+                className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground px-8 py-4 rounded-xl font-bold text-lg hover:from-accent/90 hover:to-accent/70 transition-all hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-3"
               >
                 <ShoppingBag className="w-5 h-5" />
                 <span>{addToCartMutation.isPending ? "Ajout..." : "Ajouter au Panier"}</span>
               </button>
+              
+              <button
+                onClick={handleBuyNow}
+                disabled={addToCartMutation.isPending}
+                className="w-full bg-foreground hover:bg-foreground/90 text-background px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {addToCartMutation.isPending ? "Traitement..." : "Acheter maintenant"}
+              </button>
+
               <button
                 onClick={() => setIsWishlisted(!isWishlisted)}
-                className={`px-6 py-4 border-2 rounded-xl transition-all hover:scale-105 ${
+                className={`w-full px-6 py-3 border-2 rounded-xl transition-all hover:scale-105 flex items-center justify-center gap-2 ${
                   isWishlisted
                     ? "border-accent bg-accent/10 text-accent"
                     : "border-foreground/20 hover:border-accent"
                 }`}
               >
-                <Heart className={`w-6 h-6 ${isWishlisted ? "fill-accent" : ""}`} />
+                <Heart className={`w-5 h-5 ${isWishlisted ? "fill-accent" : ""}`} />
+                <span>{isWishlisted ? "Ajouté aux favoris" : "Ajouter aux favoris"}</span>
               </button>
             </div>
 

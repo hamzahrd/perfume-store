@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, products, cartItems, orders, orderItems, type Order } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -168,7 +168,20 @@ export async function searchProducts(query: string) {
 export async function getCartItems(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(cartItems).where(eq(cartItems.userId, userId));
+
+  const rows = await db
+    .select({
+      cart: cartItems,
+      product: products,
+    })
+    .from(cartItems)
+    .leftJoin(products, eq(cartItems.productId, products.id))
+    .where(eq(cartItems.userId, userId));
+
+  return rows.map((row) => ({
+    ...row.cart,
+    product: row.product ? parseProductJsonFields(row.product) : undefined,
+  }));
 }
 
 export async function addToCart(userId: number, productId: number, quantity: number, selectedSize?: string) {
@@ -265,6 +278,65 @@ export async function createOrder(userId: number, totalAmount: number, shippingA
   return order;
 }
 
+export async function createGuestOrder(
+  productIds: number[],
+  totalAmount: number,
+  customerName: string,
+  customerCity: string,
+  customerPhone: string,
+  customerAddress: string,
+  customerEmail: string
+) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  console.log("createGuestOrder called with address:", customerAddress);
+  
+  const orderNumber = `GUEST-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  const shippingData = { 
+    name: customerName, 
+    city: customerCity, 
+    phone: customerPhone,
+    address: customerAddress 
+  };
+  
+  console.log("Saving shippingAddress:", JSON.stringify(shippingData));
+  
+  // Create order with userId = 0 for guest orders
+  await db.insert(orders).values({
+    userId: 0,
+    orderNumber,
+    totalAmount: totalAmount.toString() as any,
+    status: 'pending',
+    shippingAddress: JSON.stringify(shippingData),
+    email: customerEmail || 'guest@example.com',
+  });
+  
+  const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
+  const order = result.length > 0 ? result[0] : undefined;
+  
+  if (order) {
+    // Add each product to order items
+    for (const productId of productIds) {
+      const productResult = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+      const product = productResult.length > 0 ? productResult[0] : undefined;
+      
+      if (product) {
+        await db.insert(orderItems).values({
+          orderId: order.id,
+          productId: product.id,
+          quantity: 1,
+          unitPrice: product.discountPrice || product.price,
+          selectedSize: '50ml',
+        });
+      }
+    }
+  }
+  
+  return order;
+}
+
 export async function getOrderById(orderId: number) {
   const db = await getDb();
   if (!db) return undefined;
@@ -275,7 +347,24 @@ export async function getOrderById(orderId: number) {
 export async function getUserOrders(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(orders).where(eq(orders.userId, userId));
+  return db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
+}
+
+export async function getAllOrders() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orders).orderBy(desc(orders.createdAt));
+}
+
+export async function deleteOrder(orderId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // First delete all order items
+  await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
+  
+  // Then delete the order
+  await db.delete(orders).where(eq(orders.id, orderId));
 }
 
 export async function updateOrderStatus(orderId: number, status: string) {
@@ -299,5 +388,21 @@ export async function addOrderItem(orderId: number, productId: number, quantity:
 export async function getOrderItems(orderId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  
+  // Get order items with product details
+  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  
+  // Fetch product details for each item
+  const itemsWithProducts = await Promise.all(
+    items.map(async (item) => {
+      const productResult = await db.select().from(products).where(eq(products.id, item.productId)).limit(1);
+      const product = productResult.length > 0 ? parseProductJsonFields(productResult[0]) : null;
+      return {
+        ...item,
+        product,
+      };
+    })
+  );
+  
+  return itemsWithProducts;
 }

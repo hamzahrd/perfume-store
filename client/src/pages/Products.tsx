@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useSearch } from "wouter";
 import { ChevronRight, Search, Filter, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -7,11 +7,17 @@ export default function Products() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const categoryParam = params.get("category") || "all";
+  const searchParam = params.get("search") || "";
 
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParam);
   const [sortBy, setSortBy] = useState("featured");
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Update search query when URL parameter changes
+  useEffect(() => {
+    setSearchQuery(searchParam);
+  }, [searchParam]);
 
   const { data: products = [] } = trpc.products.list.useQuery({
     category: selectedCategory === "all" ? undefined : selectedCategory,
@@ -50,14 +56,14 @@ export default function Products() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-foreground/10">
         <div className="container py-4">
           <Link href="/">
-            <a className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <span className="bg-accent text-accent-foreground px-3 py-1 rounded font-serif">MZ</span>
+            <a className="text-2xl font-bold tracking-tight flex items-center gap-2 mb-4">
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
               <span className="font-serif">MAZAYA</span>
             </a>
           </Link>
 
           {/* Search Bar */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground/40" />
               <input
@@ -127,7 +133,7 @@ export default function Products() {
               </div>
 
               {/* Price Range */}
-              <div>
+              {/* <div>
                 <h3 className="text-lg font-semibold mb-4">Price Range</h3>
                 <div className="space-y-2 text-sm text-foreground/60">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -147,7 +153,7 @@ export default function Products() {
                     <span>Over 500 DH</span>
                   </label>
                 </div>
-              </div>
+              </div> */}
             </div>
           </aside>
 
