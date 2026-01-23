@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 export default function OrderConfirmation() {
   const params = useParams();
-  const orderId = parseInt(params.id || "0");
+  const orderId = params.id || "";
 
   const { data: order } = trpc.orders.getById.useQuery({ id: orderId });
   const { data: orderItems = [] } = trpc.orders.getItems.useQuery(
@@ -60,7 +60,7 @@ export default function OrderConfirmation() {
           </h1>
           
           <p className="text-xl text-foreground/70 mb-6">
-            Commande <span className="font-bold text-accent">#{order.orderNumber || order.id}</span>
+            Commande <span className="font-bold text-accent">#{order.orderNumber || (order._id as any)}</span>
           </p>
 
           {/* Contact Info Card */}
@@ -99,10 +99,10 @@ export default function OrderConfirmation() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <div className="bg-white px-4 py-3 rounded-lg border border-blue-300 font-mono text-sm text-blue-800 flex items-center gap-2">
-                <span>mazayaparfums.com/command/{order.orderNumber || order.id}</span>
+                <span>mazayaparfums.com/command/{order.orderNumber || (order._id as any)}</span>
                 <button 
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/command/${order.orderNumber || order.id}`);
+                    navigator.clipboard.writeText(`${window.location.origin}/command/${order.orderNumber || (order._id as any)}`);
                     toast.success("Lien copié!");
                   }}
                   className="p-1 hover:bg-blue-100 rounded transition-colors"
@@ -185,7 +185,7 @@ export default function OrderConfirmation() {
 
             {/* Action Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Link href={`/command/${order.orderNumber || order.id}`}>
+              <Link href={`/command/${order.orderNumber || (order._id as any)}`}>
                 <a className="w-full bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-accent-foreground px-8 py-4 rounded-xl font-bold text-center transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2">
                   <Package className="w-5 h-5" />
                   Suivre ma commande

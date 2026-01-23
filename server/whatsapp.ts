@@ -1,4 +1,4 @@
-import { Order } from "../drizzle/schema";
+import type { IOrder } from "./models/Order";
 
 // WhatsApp notification service using CallMeBot API (free)
 // Setup instructions:
@@ -37,7 +37,7 @@ export class WhatsAppService {
     }
   }
 
-  static async sendOrderNotification(order: Order, orderItems: any[], customerInfo?: { name: string; city: string; phone: string }): Promise<boolean> {
+  static async sendOrderNotification(order: IOrder | any, orderItems: any[], customerInfo?: { name: string; city: string; phone: string }): Promise<boolean> {
     try {
       const phoneNumber = process.env.WHATSAPP_ADMIN_NUMBER || "";
       

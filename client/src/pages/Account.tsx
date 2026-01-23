@@ -156,7 +156,7 @@ export default function Account() {
                 ) : (
                   <div className="space-y-4">
                     {orders.map((order: any) => (
-                      <Link key={order.id} href={`/order-confirmation/${order.id}`}>
+                      <Link key={order._id} href={`/order-confirmation/${order._id}`}>
                         <a className="block border border-foreground/10 p-6 hover:border-accent/50 transition-colors">
                           <div className="flex items-center justify-between mb-4">
                             <div>

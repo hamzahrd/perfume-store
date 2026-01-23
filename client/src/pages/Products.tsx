@@ -188,7 +188,7 @@ export default function Products() {
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredProducts.map((product: any, index) => (
-                  <Link key={product.id} href={`/product/${product.id}`}>
+                  <Link key={product._id} href={`/product/${product._id}`}>
                     <a className="product-card group">
                       <div className="product-image-container">
                         {product.imageUrl ? (

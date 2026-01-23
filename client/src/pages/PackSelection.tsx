@@ -22,6 +22,7 @@ export default function PackSelection() {
     city: "",
     address: "",
     phone: "",
+    email: "",
   });
 
   const { data: allProducts = [] } = trpc.products.list.useQuery({});
@@ -48,7 +49,7 @@ export default function PackSelection() {
       
       // Reset form
       setSelectedProducts([null, null, null, null, null]);
-      setFormData({ lastName: "", firstName: "", city: "", address: "", phone: "" });
+      setFormData({ lastName: "", firstName: "", city: "", address: "", phone: "", email: "" });
       
       // Redirect to tracking page
       setTimeout(() => {
@@ -85,20 +86,20 @@ export default function PackSelection() {
       return;
     }
 
-    if (!formData.lastName || !formData.firstName || !formData.city || !formData.address || !formData.phone) {
+    if (!formData.lastName || !formData.firstName || !formData.city || !formData.address || !formData.phone || !formData.email) {
       toast.error("Veuillez remplir tous les champs");
       return;
     }
 
     // Create guest order with selected products
     createGuestOrderMutation.mutate({
-      productIds: validProducts,
+      productIds: validProducts.map(id => id?.toString() || ''),
       totalAmount: 199, // Pack price
       customerName: `${formData.firstName} ${formData.lastName}`,
       customerCity: formData.city,
       customerPhone: formData.phone,
       customerAddress: formData.address,
-      customerEmail: "",
+      customerEmail: formData.email,
     });
   };
 
@@ -109,7 +110,7 @@ export default function PackSelection() {
 
   const getProductById = (id: number | null) => {
     if (!id) return null;
-    return allProducts.find((p: any) => p.id === id);
+    return allProducts.find((p: any) => p._id === id);
   };
 
   const filledSlots = selectedProducts.filter(id => id !== null).length;
@@ -353,6 +354,20 @@ export default function PackSelection() {
                       className="w-full px-3 py-2 text-sm font-medium bg-white border border-foreground/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/25 transition-all shadow-sm placeholder:text-foreground/40"
                     />
                   </div>
+
+                  {/* Row 4: Email (Full Width) */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-foreground/70 mb-1.5">Email *</label>
+                    <input
+                      type="email"
+                      placeholder="votre.email@example.com"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm font-medium bg-white border border-foreground/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/25 transition-all shadow-sm placeholder:text-foreground/40"
+                    />
+                  </div>
                 </div>
 
                 {/* Price Summary */}
@@ -467,17 +482,17 @@ export default function PackSelection() {
           {/* Products Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filteredProducts.map((product: any) => {
-              const isAlreadySelected = selectedProducts.includes(product.id);
+              const isAlreadySelected = selectedProducts.includes(product._id);
               
               return (
                 <div
-                  key={product.id}
+                  key={product._id}
                   className={`border-2 rounded-lg p-3 transition-all cursor-pointer ${
                     isAlreadySelected
                       ? "border-foreground/20 bg-foreground/5 opacity-50 cursor-not-allowed"
                       : "border-foreground/20 hover:border-accent hover:shadow-lg"
                   }`}
-                  onClick={() => !isAlreadySelected && handleProductSelect(product.id)}
+                  onClick={() => !isAlreadySelected && handleProductSelect(product._id)}
                 >
                   <div className="aspect-square bg-[#f5f3ed] rounded-lg mb-2 overflow-hidden flex items-center justify-center">
                     {product.imageUrl ? (

@@ -10,7 +10,7 @@ import { useGuestCart } from "@/hooks/useGuestCart";
 export default function ProductDetail() {
   const params = useParams();
   const [, setLocation] = useLocation();
-  const productId = parseInt(params.id || "0");
+  const productId = params.id || "0";
   const { user, isAuthenticated } = useAuth();
 
   const [selectedSize, setSelectedSize] = useState("50ml");
@@ -25,7 +25,7 @@ export default function ProductDetail() {
   });
 
   const { data: relatedProducts = [] } = trpc.products.list.useQuery({
-    category: product?.category === 'all' ? undefined : product?.category,
+    category: product?.category,
   }, {
     enabled: !!product?.category,
   });
@@ -50,20 +50,20 @@ export default function ProductDetail() {
     if (isAuthenticated) {
       // Authenticated users: add to database cart
       addToCartMutation.mutate({
-        productId,
+        productId: productId as string,
         quantity,
         selectedSize,
       });
     } else {
       // Guest users: add to local storage cart
-      guestCart.addItem(productId, quantity, selectedSize);
+      guestCart.addItem(productId as string, quantity, selectedSize);
     }
   };
 
   const handleBuyNow = () => {
     if (isAuthenticated) {
       addToCartMutation.mutate({
-        productId,
+        productId: productId as string,
         quantity,
         selectedSize,
       }, {
@@ -73,7 +73,7 @@ export default function ProductDetail() {
       });
     } else {
       // Guest users: add to cart and go to checkout
-      guestCart.addItem(productId, quantity, selectedSize);
+      guestCart.addItem(productId as string, quantity, selectedSize);
       setLocation("/cart?checkout=true");
     }
   };
@@ -377,11 +377,11 @@ export default function ProductDetail() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {(() => {
               const filteredRelated = relatedProducts
-                .filter((p: any) => p.id !== product?.id)
+                .filter((p: any) => p._id !== product?._id)
                 .slice(0, 4);
 
               return filteredRelated.map((relatedProduct: any) => (
-                <Link key={relatedProduct.id} href={`/product/${relatedProduct.id}`}>
+                <Link key={relatedProduct._id} href={`/product/${relatedProduct._id}`}>
                   <a className="group block border border-foreground/10 rounded-xl overflow-hidden hover:shadow-lg hover:border-accent/30 transition-all duration-300 hover:scale-105 bg-[#f5f3ed]">
                     <div className="aspect-square bg-[#f5f3ed] flex items-center justify-center relative overflow-hidden">
                       {relatedProduct.imageUrl ? (

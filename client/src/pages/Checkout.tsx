@@ -23,7 +23,7 @@ export default function Checkout() {
   const createOrderMutation = trpc.orders.create.useMutation({
     onSuccess: (order) => {
       toast.success("Commande confirmée! 🎉");
-      setLocation(`/order-confirmation/${order?.id}`);
+      setLocation(`/order-confirmation/${order?._id}`);
     },
     onError: (error) => {
       toast.error("Erreur lors de la commande");

@@ -208,8 +208,8 @@ export default function Home() {
                 <div className="divide-y divide-foreground/10">
                   {searchSuggestions.map((product: any) => (
                     <button
-                      key={product.id}
-                      onClick={() => handleSelectProduct(product.id)}
+                      key={product._id}
+                      onClick={() => handleSelectProduct(product._id)}
                       className="w-full flex items-center gap-4 p-4 hover:bg-foreground/5 transition-colors text-left"
                     >
                       <div className="w-12 h-12 bg-[#f5f3ed] rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
@@ -508,7 +508,7 @@ export default function Home() {
               const displayProducts = [...menProducts, ...womenProducts, ...unisexProducts];
               
               return displayProducts.map((product: any) => (
-                <Link key={product.id} href={`/product/${product.id}`}>
+                <Link key={product._id} href={`/product/${product._id}`}>
                   <a className="group block border border-foreground/10 rounded-xl overflow-hidden hover:shadow-lg hover:border-accent/30 transition-all duration-300 hover:scale-105 bg-[#f5f3ed]">
                     <div className="aspect-square bg-[#f5f3ed] flex items-center justify-center relative overflow-hidden">
                       {product.imageUrl ? (

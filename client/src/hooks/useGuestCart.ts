@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 interface GuestCartItem {
-  productId: number;
+  productId: string;
   quantity: number;
   selectedSize?: string;
 }
@@ -45,7 +45,7 @@ export function useGuestCart() {
     window.dispatchEvent(new CustomEvent(CART_UPDATE_EVENT));
   }, []);
 
-  const addItem = useCallback((productId: number, quantity: number, selectedSize?: string) => {
+  const addItem = useCallback((productId: string, quantity: number, selectedSize?: string) => {
     const stored = localStorage.getItem(GUEST_CART_KEY);
     const currentItems: GuestCartItem[] = stored ? JSON.parse(stored) : [];
     
@@ -67,7 +67,7 @@ export function useGuestCart() {
     saveCart(newItems);
   }, [saveCart]);
 
-  const removeItem = useCallback((productId: number, selectedSize?: string) => {
+  const removeItem = useCallback((productId: string, selectedSize?: string) => {
     const stored = localStorage.getItem(GUEST_CART_KEY);
     const currentItems: GuestCartItem[] = stored ? JSON.parse(stored) : [];
     
@@ -77,7 +77,7 @@ export function useGuestCart() {
     saveCart(filtered);
   }, [saveCart]);
 
-  const updateQuantity = useCallback((productId: number, quantity: number, selectedSize?: string) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, selectedSize?: string) => {
     const stored = localStorage.getItem(GUEST_CART_KEY);
     const currentItems: GuestCartItem[] = stored ? JSON.parse(stored) : [];
     
