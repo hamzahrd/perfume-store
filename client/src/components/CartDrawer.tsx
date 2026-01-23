@@ -30,7 +30,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     } else {
       // Map guest cart items to include product details
       return guestCart.cartItems.map(item => {
-        const product = allProducts.find((p: any) => p.id === item.productId);
+        const product = allProducts.find((p: any) => p._id === item.productId);
         return {
           id: item.productId,
           productId: item.productId,
@@ -55,7 +55,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     },
   });
 
-  const handleUpdateQuantity = (productId: number, quantity: number, selectedSize?: string, cartItemId?: number) => {
+  const handleUpdateQuantity = (productId: string, quantity: number, selectedSize?: string, cartItemId?: string) => {
     if (quantity > 0) {
       if (isAuthenticated && cartItemId) {
         updateCartMutation.mutate({ cartItemId, quantity });
@@ -65,7 +65,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     }
   };
 
-  const handleRemoveItem = (productId: number, selectedSize?: string, cartItemId?: number) => {
+  const handleRemoveItem = (productId: string, selectedSize?: string, cartItemId?: string) => {
     if (isAuthenticated && cartItemId) {
       removeFromCartMutation.mutate({ cartItemId });
     } else {
@@ -158,7 +158,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                       {/* Remove Button */}
                       <button
-                        onClick={() => handleRemoveItem(item.productId, item.selectedSize, item.id)}
+                        onClick={() => handleRemoveItem(item.productId, item.selectedSize, item._id)}
                         className="p-2 hover:bg-destructive/10 text-destructive transition-colors rounded h-fit"
                       >
                         <Trash2 className="w-4 h-4" />

@@ -55,7 +55,7 @@ export const appRouter = router({
 
         // Generate tokens
         const accessToken = generateAccessToken({
-          userId: user.id,
+          userId: user._id?.toString(),
           email: user.email || "",
           role: user.role,
         });
@@ -63,7 +63,7 @@ export const appRouter = router({
         return {
           success: true,
           user: {
-            id: user.id,
+            id: user._id?.toString(),
             email: user.email,
             name: user.name,
             role: user.role,
@@ -88,17 +88,17 @@ export const appRouter = router({
         }
 
         // Update last signed in
-        await updateUserLastSignedIn(user.id);
+        await updateUserLastSignedIn(user._id?.toString());
 
         // Generate tokens
         const accessToken = generateAccessToken({
-          userId: user.id,
+          userId: user._id?.toString(),
           email: user.email || "",
           role: user.role,
         });
 
         const refreshToken = generateRefreshToken({
-          userId: user.id,
+          userId: user._id?.toString(),
           email: user.email || "",
           role: user.role,
         });
@@ -106,7 +106,7 @@ export const appRouter = router({
         return {
           success: true,
           user: {
-            id: user.id,
+            id: user._id?.toString(),
             email: user.email,
             name: user.name,
             role: user.role,
@@ -134,7 +134,7 @@ export const appRouter = router({
       }),
 
     getById: publicProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.string() }))
       .query(async ({ input }) => {
         return getProductById(input.id);
       }),
@@ -168,23 +168,17 @@ export const appRouter = router({
           throw new Error("Only admins can create products");
         }
 
-        const db = await import("./db").then(m => m.getDb());
-        if (!db) throw new Error("Database not available");
+        const { Product } = await import("./models/Product");
 
-        const { users, products } = await import("../drizzle/schema").then(m => ({
-          users: m.users,
-          products: m.products
-        }));
-
-        const result = await db.insert(products).values({
+        const product = await Product.create({
           name: input.name,
           description: input.description,
-          category: input.category as any,
-          price: input.price.toString(),
-          discountPrice: input.discountPrice?.toString() || null,
+          category: input.category,
+          price: input.price,
+          discountPrice: input.discountPrice || undefined,
           imageUrl: input.imageUrl,
-          imageGallery: input.imageGallery ? JSON.stringify(input.imageGallery) : null, // Store image gallery
-          sizes: JSON.stringify(input.sizes),
+          imageGallery: input.imageGallery || [],
+          sizes: input.sizes,
           topNotes: input.topNotes,
           heartNotes: input.heartNotes,
           baseNotes: input.baseNotes,
@@ -192,13 +186,13 @@ export const appRouter = router({
           isActive: true,
         });
 
-        return { success: true, id: (result as any).insertId };
+        return { success: true, id: product._id?.toString() };
       }),
 
     update: protectedProcedure
       .input(
         z.object({
-          id: z.number(),
+          id: z.string(),
           name: z.string().min(1),
           description: z.string().min(1),
           category: z.string().min(1),
@@ -219,54 +213,38 @@ export const appRouter = router({
           throw new Error("Only admins can update products");
         }
 
-        const db = await import("./db").then(m => m.getDb());
-        if (!db) throw new Error("Database not available");
+        const { Product } = await import("./models/Product");
 
-        const { products } = await import("../drizzle/schema").then(m => ({
-          products: m.products
-        }));
-        const { eq } = await import("drizzle-orm");
-
-        await db.update(products)
-          .set({
-            name: input.name,
-            description: input.description,
-            category: input.category as any,
-            price: input.price.toString(),
-            discountPrice: input.discountPrice?.toString() || null,
-            imageUrl: input.imageUrl,
-            imageGallery: input.imageGallery ? JSON.stringify(input.imageGallery) : null,
-            sizes: JSON.stringify(input.sizes),
-            topNotes: input.topNotes,
-            heartNotes: input.heartNotes,
-            baseNotes: input.baseNotes,
-            stock: input.stock,
-          })
-          .where(eq(products.id, input.id));
+        await Product.findByIdAndUpdate(input.id, {
+          name: input.name,
+          description: input.description,
+          category: input.category,
+          price: input.price,
+          discountPrice: input.discountPrice || undefined,
+          imageUrl: input.imageUrl,
+          imageGallery: input.imageGallery || [],
+          sizes: input.sizes,
+          topNotes: input.topNotes,
+          heartNotes: input.heartNotes,
+          baseNotes: input.baseNotes,
+          stock: input.stock,
+        });
 
         return { success: true, id: input.id };
       }),
 
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.string() }))
       .mutation(async ({ input, ctx }) => {
         // Only admins can delete products
         if (ctx.user?.role !== "admin") {
           throw new Error("Only admins can delete products");
         }
 
-        const db = await import("./db").then(m => m.getDb());
-        if (!db) throw new Error("Database not available");
-
-        const { products } = await import("../drizzle/schema").then(m => ({
-          products: m.products
-        }));
-        const { eq } = await import("drizzle-orm");
+        const { Product } = await import("./models/Product");
 
         // Soft delete by setting isActive to false
-        await db.update(products)
-          .set({ isActive: false })
-          .where(eq(products.id, input.id));
+        await Product.findByIdAndUpdate(input.id, { isActive: false });
 
         return { success: true };
       }),
@@ -275,31 +253,31 @@ export const appRouter = router({
   // Cart router
   cart: router({
     getItems: protectedProcedure.query(async ({ ctx }) => {
-      return getCartItems(ctx.user.id);
+      return getCartItems(ctx.user._id?.toString() || '');
     }),
 
     addItem: protectedProcedure
       .input(
         z.object({
-          productId: z.number(),
+          productId: z.string(),
           quantity: z.number().min(1),
           selectedSize: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await addToCart(ctx.user.id, input.productId, input.quantity, input.selectedSize);
+        await addToCart(ctx.user._id?.toString() || '', input.productId, input.quantity, input.selectedSize);
         return { success: true };
       }),
 
     removeItem: protectedProcedure
-      .input(z.object({ cartItemId: z.number() }))
+      .input(z.object({ cartItemId: z.string() }))
       .mutation(async ({ input }) => {
         await removeFromCart(input.cartItemId);
         return { success: true };
       }),
 
     updateItem: protectedProcedure
-      .input(z.object({ cartItemId: z.number(), quantity: z.number().min(1) }))
+      .input(z.object({ cartItemId: z.string(), quantity: z.number().min(1) }))
       .mutation(async ({ input }) => {
         await updateCartItem(input.cartItemId, input.quantity);
         return { success: true };
@@ -320,10 +298,10 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const order = await createOrder(
-          ctx.user.id,
+          ctx.user._id?.toString(),
           input.totalAmount,
           input.shippingAddress,
-          ctx.user.email || ""
+          ctx.user.email || "guess@gmail.com"
         );
         
         if (!order) {
@@ -331,7 +309,7 @@ export const appRouter = router({
         }
         
         // Get order items
-        const orderItems = await getOrderItems(order.id);
+        const orderItems = await getOrderItems(order._id?.toString());
         
         // Send WhatsApp notification with customer info
         const customerInfo = {
@@ -342,13 +320,16 @@ export const appRouter = router({
         
         await sendOrderToWhatsApp(order, orderItems, customerInfo);
         
-        return order;
+        return {
+          ...order,
+          id: order._id?.toString(),
+        };
       }),
     
     createGuest: publicProcedure
       .input(
         z.object({
-          productIds: z.array(z.number()),
+          productIds: z.array(z.string()),
           totalAmount: z.number(),
           customerName: z.string(),
           customerCity: z.string(),
@@ -374,7 +355,7 @@ export const appRouter = router({
         }
         
         // Get order items
-        const orderItems = await getOrderItems(order.id);
+        const orderItems = await getOrderItems(order._id?.toString());
         
         // Send WhatsApp notification
         const customerInfo = {
@@ -385,13 +366,16 @@ export const appRouter = router({
         
         await sendOrderToWhatsApp(order, orderItems, customerInfo);
         
-        return order;
+        return {
+          ...order,
+          id: order._id?.toString(),
+        };
       }),
 
     sendToWhatsApp: protectedProcedure
       .input(
         z.object({
-          orderId: z.number(),
+          orderId: z.string(),
           customerName: z.string(),
           customerCity: z.string(),
           customerPhone: z.string(),
@@ -420,7 +404,7 @@ export const appRouter = router({
       }),
 
     getById: publicProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.string() }))
       .query(async ({ input }) => {
         return getOrderById(input.id);
       }),
@@ -429,13 +413,13 @@ export const appRouter = router({
       if (ctx.user.role === "admin") {
         return getAllOrders();
       }
-      return getUserOrders(ctx.user.id);
+      return getUserOrders(ctx.user._id?.toString());
     }),
 
     updateStatus: protectedProcedure
       .input(
         z.object({
-          orderId: z.number(),
+          orderId: z.string(),
           status: z.string(),
         })
       )
@@ -448,7 +432,7 @@ export const appRouter = router({
       }),
 
     delete: protectedProcedure
-      .input(z.object({ orderId: z.number() }))
+      .input(z.object({ orderId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") {
           throw new Error("Unauthorized");
@@ -460,20 +444,13 @@ export const appRouter = router({
     getByOrderNumber: publicProcedure
       .input(z.object({ orderNumber: z.string() }))
       .query(async ({ input }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) return null;
-        const { eq } = await import("drizzle-orm");
-        const { orders } = await import("../drizzle/schema");
-        const result = await db
-          .select()
-          .from(orders)
-          .where(eq(orders.orderNumber, input.orderNumber))
-          .limit(1);
-        return result.length > 0 ? result[0] : null;
+        const { Order } = await import("./models/Order");
+        const order = await Order.findOne({ orderNumber: input.orderNumber }).lean();
+        return order || null;
       }),
 
     getItems: publicProcedure
-      .input(z.object({ orderId: z.number() }))
+      .input(z.object({ orderId: z.string() }))
       .query(async ({ input }) => {
         return getOrderItems(input.orderId);
       }),

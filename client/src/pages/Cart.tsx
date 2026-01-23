@@ -17,6 +17,7 @@ export default function Cart() {
     city: "",
     phone: "",
     address: "",
+    email: "",
   });
 
   const { data: authCartItems = [], refetch: refetchCart } = trpc.cart.getItems.useQuery(
@@ -41,7 +42,7 @@ export default function Cart() {
     } else {
       // Map guest cart items to product details
       return guestCart.cartItems.map(item => {
-        const product = allProducts.find((p: any) => p.id === item.productId);
+        const product = allProducts.find((p: any) => p._id === item.productId);
         return {
           id: item.productId,
           productId: item.productId,
@@ -97,12 +98,12 @@ export default function Cart() {
     }, 0);
   }, [cartItems]);
 
-  const handleRemoveItem = (productId: number, selectedSize?: string) => {
+  const handleRemoveItem = (productId: string, selectedSize?: string) => {
     if (isAuthenticated) {
       // Find the cart item ID
-      const item = authCartItems.find((i: any) => i.productId === productId);
+      const item = authCartItems.find((i: any) => i.productId === productId && i.selectedSize === selectedSize);
       if (item) {
-        removeFromCartMutation.mutate({ cartItemId: item.id });
+        removeFromCartMutation.mutate({ cartItemId: item._id });
       }
     } else {
       guestCart.removeItem(productId, selectedSize);
@@ -110,21 +111,23 @@ export default function Cart() {
     }
   };
 
-  const handleUpdateQuantity = (productId: number, quantity: number, selectedSize?: string) => {
+  const handleUpdateQuantity = (productId: string, quantity: number, selectedSize?: string) => {
     if (quantity > 0) {
       if (isAuthenticated) {
-        const item = authCartItems.find((i: any) => i.productId === productId);
+        const item = authCartItems.find((i: any) => i.productId === productId && i.selectedSize === selectedSize);
         if (item) {
-          updateCartMutation.mutate({ cartItemId: item.id, quantity });
+          updateCartMutation.mutate({ cartItemId: item._id, quantity });
         }
       } else {
         guestCart.updateQuantity(productId, quantity, selectedSize);
       }
+    } else {
+      handleRemoveItem(productId, selectedSize);
     }
   };
 
   const handleCheckout = () => {
-    if (!checkoutForm.firstName || !checkoutForm.lastName || !checkoutForm.city || !checkoutForm.phone || !checkoutForm.address) {
+    if (!checkoutForm.firstName || !checkoutForm.lastName || !checkoutForm.city || !checkoutForm.phone || !checkoutForm.address || !checkoutForm.email) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -158,7 +161,7 @@ export default function Cart() {
         customerCity: checkoutForm.city,
         customerPhone: checkoutForm.phone,
         customerAddress: checkoutForm.address,
-        customerEmail: "",
+        customerEmail: checkoutForm.email,
       });
     }
   };
@@ -423,6 +426,19 @@ export default function Cart() {
                         value={checkoutForm.phone}
                         onChange={(e) =>
                           setCheckoutForm({ ...checkoutForm, phone: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-foreground/20 rounded-lg focus:outline-none focus:border-accent bg-background text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Email *</label>
+                      <input
+                        type="email"
+                        placeholder="votre.email@example.com"
+                        value={checkoutForm.email}
+                        onChange={(e) =>
+                          setCheckoutForm({ ...checkoutForm, email: e.target.value })
                         }
                         className="w-full px-3 py-2 border border-foreground/20 rounded-lg focus:outline-none focus:border-accent bg-background text-sm"
                       />
