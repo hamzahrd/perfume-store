@@ -26,7 +26,7 @@ export default function SignIn() {
       if (role === "admin") {
         setLocation("/admin");
       } else {
-        setLocation("/account");
+        setLocation("/");
       }
     },
     onError: (error) => {
@@ -58,8 +58,9 @@ export default function SignIn() {
       <header className="sticky top-0 z-40 bg-background border-b border-foreground/10">
         <div className="container py-4 flex items-center justify-between">
           <Link href="/">
-            <a className="text-2xl font-bold tracking-tight font-serif">
-              PERFUME
+            <a className="text-2xl font-bold tracking-tight flex items-center gap-2 hover:opacity-70 transition-opacity">
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
+              <span className="font-serif text-accent">MAZAYA</span>
             </a>
           </Link>
           <Link href="/">
@@ -116,7 +117,7 @@ export default function SignIn() {
             <button
               type="submit"
               disabled={isLoading || loginMutation.isPending}
-              className="w-full py-3 px-4 bg-accent text-accent-foreground rounded hover:bg-accent/90 transition-colors font-medium disabled:opacity-50"
+              className="w-full py-3 px-4 btn-primary disabled:opacity-50"
             >
               {isLoading || loginMutation.isPending ? "Signing in..." : "Sign In"}
             </button>

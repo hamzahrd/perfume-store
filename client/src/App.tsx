@@ -8,11 +8,14 @@ import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import OrderTracking from "./pages/OrderTracking";
 import AdminDashboard from "./pages/AdminDashboard";
 import SignIn from "./pages/SignIn";
 import Register from "./pages/Register";
+import PackSelection from "./pages/PackSelection";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,7 +25,10 @@ function Router() {
       <Route path="/products" component={Products} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/cart" component={Cart} />
+      <Route path="/checkout" component={Checkout} />
       <Route path="/account" component={Account} />
+      <Route path="/pack-selection" component={PackSelection} />
+      <Route path="/command/:orderNumber" component={OrderTracking} />
       <Route path="/order-confirmation/:id" component={OrderConfirmation} />
       <Route path="/login" component={SignIn} />
       <Route path="/register" component={Register} />

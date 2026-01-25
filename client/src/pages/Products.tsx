@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useSearch } from "wouter";
 import { ChevronRight, Search, Filter, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -7,22 +7,27 @@ export default function Products() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const categoryParam = params.get("category") || "all";
+  const searchParam = params.get("search") || "";
 
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParam);
   const [sortBy, setSortBy] = useState("featured");
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Update search query when URL parameter changes
+  useEffect(() => {
+    setSearchQuery(searchParam);
+  }, [searchParam]);
 
   const { data: products = [] } = trpc.products.list.useQuery({
     category: selectedCategory === "all" ? undefined : selectedCategory,
   });
 
   const categories = [
-    { name: "All", value: "all" },
-    { name: "Men", value: "men" },
-    { name: "Women", value: "women" },
-    { name: "Unisex", value: "unisex" },
-    { name: "Packs", value: "pack" },
+    { name: "Tous", value: "all" },
+    { name: "Hommes", value: "men" },
+    { name: "Femmes", value: "women" },
+    { name: "Unisexe", value: "unisex" },
   ];
 
   const filteredProducts = useMemo(() => {
@@ -48,16 +53,17 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background border-b border-foreground/10">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-foreground/10">
         <div className="container py-4">
           <Link href="/">
-            <a className="text-2xl font-bold tracking-tight font-serif mb-4">
-              PERFUME
+            <a className="text-2xl font-bold tracking-tight flex items-center gap-2 mb-4">
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
+              <span className="font-serif">MAZAYA</span>
             </a>
           </Link>
 
           {/* Search Bar */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground/40" />
               <input
@@ -101,8 +107,8 @@ export default function Products() {
                       }}
                       className={`block w-full text-left px-3 py-2 transition-colors ${
                         selectedCategory === cat.value
-                          ? "bg-foreground/10 text-accent font-semibold"
-                          : "hover:bg-foreground/5"
+                          ? "bg-accent text-accent-foreground font-semibold rounded-lg"
+                          : "hover:bg-foreground/5 rounded-lg"
                       }`}
                     >
                       {cat.name}
@@ -117,7 +123,7 @@ export default function Products() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2 border border-foreground/20 bg-background focus:outline-none focus:border-accent rounded-lg"
                 >
                   <option value="featured">Featured</option>
                   <option value="newest">Newest</option>
@@ -127,27 +133,27 @@ export default function Products() {
               </div>
 
               {/* Price Range */}
-              <div>
+              {/* <div>
                 <h3 className="text-lg font-semibold mb-4">Price Range</h3>
                 <div className="space-y-2 text-sm text-foreground/60">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>Under 100 DH</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>100 - 250 DH</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>250 - 500 DH</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-4 h-4" />
+                    <input type="checkbox" className="w-4 h-4 rounded" />
                     <span>Over 500 DH</span>
                   </label>
                 </div>
-              </div>
+              </div> */}
             </div>
           </aside>
 
@@ -168,7 +174,7 @@ export default function Products() {
               </div>
               <button
                 onClick={() => setFilterOpen(!filterOpen)}
-                className="lg:hidden p-2"
+                className="lg:hidden p-2 rounded-full hover:bg-foreground/10 transition-colors"
               >
                 {filterOpen ? (
                   <X className="w-5 h-5" />
@@ -181,15 +187,15 @@ export default function Products() {
             {/* Products Grid */}
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredProducts.map((product: any) => (
-                  <Link key={product.id} href={`/product/${product.id}`}>
-                    <a className="group">
-                      <div className="mb-4 aspect-square bg-card border border-foreground/10 flex items-center justify-center">
+                {filteredProducts.map((product: any, index) => (
+                  <Link key={product._id} href={`/product/${product._id}`}>
+                    <a className="product-card group">
+                      <div className="product-image-container">
                         {product.imageUrl ? (
                           <img 
                             src={product.imageUrl} 
                             alt={product.name} 
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain p-4"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.onerror = null;
@@ -200,42 +206,44 @@ export default function Products() {
                           <div className="text-5xl">🧴</div>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-foreground/60 mb-4 capitalize">
-                        {product.category}
-                      </p>
+                      <div className="p-4">
+                        <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-foreground/60 mb-4 capitalize">
+                          {product.category}
+                        </p>
 
-                      {/* Price */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {product.discountPrice ? (
-                            <>
+                        {/* Price */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {product.discountPrice ? (
+                              <>
+                                <span className="text-lg font-bold">
+                                  {product.discountPrice} DH
+                                </span>
+                                <span className="text-sm text-foreground/50 line-through">
+                                  {product.price} DH
+                                </span>
+                              </>
+                            ) : (
                               <span className="text-lg font-bold">
-                                {product.discountPrice} DH
-                              </span>
-                              <span className="text-sm text-foreground/50 line-through">
                                 {product.price} DH
                               </span>
-                            </>
-                          ) : (
-                            <span className="text-lg font-bold">
-                              {product.price} DH
-                            </span>
-                          )}
+                            )}
+                          </div>
+                          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </div>
-                        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
 
-                      {/* Stock Status */}
-                      {product.stock > 0 ? (
-                        <p className="text-xs text-accent mt-2">In Stock</p>
-                      ) : (
-                        <p className="text-xs text-destructive mt-2">
-                          Out of Stock
-                        </p>
-                      )}
+                        {/* Stock Status */}
+                        {product.stock > 0 ? (
+                          <p className="text-xs text-accent mt-2">In Stock</p>
+                        ) : (
+                          <p className="text-xs text-destructive mt-2">
+                            Out of Stock
+                          </p>
+                        )}
+                      </div>
                     </a>
                   </Link>
                 ))}
@@ -250,7 +258,7 @@ export default function Products() {
                     setSearchQuery("");
                     setSelectedCategory("all");
                   }}
-                  className="btn-elegant"
+                  className="btn-secondary"
                 >
                   Clear Filters
                 </button>

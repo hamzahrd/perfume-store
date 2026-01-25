@@ -1,11 +1,12 @@
 import { useParams } from "wouter";
 import { Link } from "wouter";
-import { CheckCircle, Package, Truck, Home } from "lucide-react";
+import { CheckCircle, Package, Phone, MessageSquare, Truck, Copy } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export default function OrderConfirmation() {
   const params = useParams();
-  const orderId = parseInt(params.id || "0");
+  const orderId = params.id || "";
 
   const { data: order } = trpc.orders.getById.useQuery({ id: orderId });
   const { data: orderItems = [] } = trpc.orders.getItems.useQuery(
@@ -17,32 +18,24 @@ export default function OrderConfirmation() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-foreground/60 mb-4">Loading order details...</p>
+          <p className="text-foreground/60 mb-4">Chargement de votre commande...</p>
           <Link href="/">
-            <a className="btn-elegant">Back Home</a>
+            <a className="btn-primary">Retour à l'accueil</a>
           </Link>
         </div>
       </div>
     );
   }
 
-  const statusSteps = [
-    { status: "pending", label: "Order Placed", icon: CheckCircle },
-    { status: "confirmed", label: "Confirmed", icon: Package },
-    { status: "shipped", label: "Shipped", icon: Truck },
-    { status: "delivered", label: "Delivered", icon: Home },
-  ];
-
-  const currentStepIndex = statusSteps.findIndex(s => s.status === order.status);
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-[#f5f3ed] to-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background border-b border-foreground/10">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-foreground/10">
         <div className="container py-4">
           <Link href="/">
-            <a className="text-2xl font-bold tracking-tight font-serif">
-              PERFUME
+            <a className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <img src="/uploads/logo.jpg" alt="Mazaya Parfums" className="h-12 w-auto" />
+              <span className="font-serif">MAZAYA</span>
             </a>
           </Link>
         </div>
@@ -50,161 +43,169 @@ export default function OrderConfirmation() {
 
       <div className="container py-12 md:py-16">
         {/* Success Message */}
-        <div className="text-center mb-16">
-          <div className="flex justify-center mb-6">
-            <CheckCircle className="w-16 h-16 text-accent" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Thank You for Your Order
-          </h1>
-          <p className="text-lg text-foreground/60 mb-2">
-            Order #{order.orderNumber}
-          </p>
-          <p className="text-foreground/60">
-            A confirmation email has been sent to {order.email}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16">
-          {/* Order Status Timeline */}
-          <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold mb-8">Order Status</h2>
-
-            {/* Timeline */}
-            <div className="mb-12">
-              <div className="flex justify-between mb-8">
-                {statusSteps.map((step, index) => {
-                  const Icon = step.icon;
-                  const isCompleted = index <= currentStepIndex;
-                  const isCurrent = index === currentStepIndex;
-
-                  return (
-                    <div key={step.status} className="flex flex-col items-center flex-1">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${
-                          isCompleted
-                            ? "bg-accent text-background"
-                            : "bg-foreground/10 text-foreground/40"
-                        }`}
-                      >
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <p
-                        className={`text-sm font-semibold text-center ${
-                          isCurrent ? "text-accent" : isCompleted ? "text-foreground" : "text-foreground/40"
-                        }`}
-                      >
-                        {step.label}
-                      </p>
-                      {index < statusSteps.length - 1 && (
-                        <div
-                          className={`absolute w-12 h-px mt-6 ml-12 ${
-                            isCompleted ? "bg-accent" : "bg-foreground/10"
-                          }`}
-                          style={{ left: "calc(50% + 24px)" }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          {/* Big Green Check Icon */}
+          <div className="flex justify-center mb-8 animate-[bounce_1s_ease-in-out]">
+            <div className="relative">
+              <div className="absolute inset-0 bg-green-500/20 rounded-full blur-2xl animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-green-500 to-green-600 rounded-full p-8 shadow-2xl">
+                <CheckCircle className="w-24 h-24 text-white" strokeWidth={2.5} />
               </div>
             </div>
+          </div>
+
+          {/* Thank You Message */}
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">
+            Merci ! Votre commande a été confirmée
+          </h1>
+          
+          <p className="text-xl text-foreground/70 mb-6">
+            Commande <span className="font-bold text-accent">#{order.orderNumber || (order._id as any)}</span>
+          </p>
+
+          {/* Contact Info Card */}
+          <div className="bg-card border-2 border-accent/20 rounded-2xl p-8 mb-8 shadow-lg">
+            <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2">
+              <Package className="w-6 h-6 text-accent" />
+              Nous vous contacterons bientôt
+            </h2>
+            <p className="text-foreground/70 mb-6">
+              Vous recevrez une confirmation par:
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <div className="flex items-center gap-2 bg-green-50 px-6 py-3 rounded-lg border border-green-200">
+                <MessageSquare className="w-5 h-5 text-green-600" />
+                <span className="font-semibold text-green-900">WhatsApp</span>
+              </div>
+              <div className="flex items-center gap-2 bg-blue-50 px-6 py-3 rounded-lg border border-blue-200">
+                <MessageSquare className="w-5 h-5 text-blue-600" />
+                <span className="font-semibold text-blue-900">SMS</span>
+              </div>
+              <div className="flex items-center gap-2 bg-orange-50 px-6 py-3 rounded-lg border border-orange-200">
+                <Phone className="w-5 h-5 text-orange-600" />
+                <span className="font-semibold text-orange-900">Appel téléphonique</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Tracking Card */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-2xl p-8 mb-8 shadow-lg">
+            <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2">
+              <Truck className="w-6 h-6 text-blue-600" />
+              Suivez votre commande
+            </h2>
+            <p className="text-foreground/70 mb-4 text-center">
+              Conservez ce lien pour suivre l'état de votre commande à tout moment:
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <div className="bg-white px-4 py-3 rounded-lg border border-blue-300 font-mono text-sm text-blue-800 flex items-center gap-2">
+                <span>mazayaparfums.com/command/{order.orderNumber || (order._id as any)}</span>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/command/${order.orderNumber || (order._id as any)}`);
+                    toast.success("Lien copié!");
+                  }}
+                  className="p-1 hover:bg-blue-100 rounded transition-colors"
+                  title="Copier le lien"
+                >
+                  <Copy className="w-4 h-4 text-blue-600" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Summary */}
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-card border border-foreground/10 rounded-2xl p-8 shadow-lg">
+            <h2 className="text-2xl font-bold mb-6">Récapitulatif de la commande</h2>
 
             {/* Order Items */}
-            <h2 className="text-2xl font-bold mb-6">Order Items</h2>
-            <div className="space-y-4 mb-12 pb-12 border-b border-foreground/10">
-              {orderItems.map((item: any) => (
-                <div key={item.id} className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold">{item.product?.name || "Product"}</p>
-                    <p className="text-sm text-foreground/60">
-                      Qty: {item.quantity} × {item.selectedSize || "Standard"}
-                    </p>
+            <div className="space-y-4 mb-8 pb-8 border-b border-foreground/10">
+              {orderItems.length > 0 ? (
+                orderItems.map((item: any) => (
+                  <div key={item.id} className="flex gap-4">
+                    <div className="w-20 h-20 bg-[#f5f3ed] rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden border border-foreground/10">
+                      {item.product?.imageUrl ? (
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product?.name}
+                          className="w-full h-full object-contain p-2"
+                        />
+                      ) : (
+                        <span className="text-3xl">🧴</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold mb-1">{item.product?.name || "Produit"}</h3>
+                      <p className="text-sm text-foreground/60">
+                        Quantité: {item.quantity} × {item.product?.price || 0} MAD
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-lg text-accent">
+                        {(item.quantity * parseFloat(item.product?.price || 0)).toFixed(2)} MAD
+                      </p>
+                    </div>
                   </div>
-                  <p className="font-bold">{(item.unitPrice * item.quantity).toFixed(2)} DH</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-foreground/60">Articles en cours de chargement...</p>
+              )}
             </div>
 
-            {/* Shipping Address */}
-            <h2 className="text-2xl font-bold mb-6">Shipping Address</h2>
-            <div className="bg-card border border-foreground/10 p-6">
-              <p className="text-foreground/60 whitespace-pre-wrap">
-                {order.shippingAddress}
-              </p>
+            {/* Order Total */}
+            <div className="space-y-3 mb-8">
+              <div className="flex justify-between text-foreground/70">
+                <span>Sous-total</span>
+                <span>{order.totalAmount} MAD</span>
+              </div>
+              <div className="flex justify-between text-foreground/70">
+                <span>Livraison</span>
+                <span className="text-accent font-semibold">Gratuite</span>
+              </div>
+              <div className="flex justify-between items-center pt-4 border-t border-foreground/10">
+                <span className="text-xl font-bold">Total</span>
+                <span className="text-3xl font-bold text-accent">{order.totalAmount} MAD</span>
+              </div>
             </div>
-          </div>
 
-          {/* Order Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="border border-foreground/10 p-8 sticky top-24">
-              <h3 className="text-xl font-bold mb-6">Order Summary</h3>
-
-              <div className="space-y-4 mb-6 pb-6 border-b border-foreground/10">
-                <div className="flex justify-between text-foreground/60">
-                  <span>Subtotal</span>
-                  <span>{order.totalAmount} DH</span>
-                </div>
-                <div className="flex justify-between text-foreground/60">
-                  <span>Shipping</span>
-                  <span>Free</span>
-                </div>
-                <div className="flex justify-between text-foreground/60">
-                  <span>Tax</span>
-                  <span>{(parseFloat(order.totalAmount) * 0.1).toFixed(2)} DH</span>
-                </div>
+            {/* Customer Info */}
+            <div className="bg-foreground/5 rounded-xl p-6 mb-6">
+              <h3 className="font-bold mb-4">Informations de livraison</h3>
+              <div className="space-y-2 text-sm">
+                <p><span className="text-foreground/60">Email:</span> <span className="font-semibold">{order.email}</span></p>
+                <p><span className="text-foreground/60">Adresse:</span> <span className="font-semibold">
+                  {typeof order.shippingAddress === 'string' 
+                    ? order.shippingAddress 
+                    : JSON.stringify(order.shippingAddress)}
+                </span></p>
               </div>
+            </div>
 
-              <div className="flex justify-between items-center mb-8">
-                <span className="font-semibold">Total</span>
-                <span className="text-xl font-bold">
-                  {(parseFloat(order.totalAmount) * 1.1).toFixed(2)} DH
-                </span>
-              </div>
-
-              <div className="bg-accent/10 border border-accent/20 p-4 rounded mb-6">
-                <p className="text-sm text-accent font-semibold">
-                  Order Status: <span className="capitalize">{order.status}</span>
-                </p>
-              </div>
-
-              <Link href="/account/orders">
-                <a className="block text-center btn-elegant-filled mb-4">
-                  View All Orders
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link href={`/command/${order.orderNumber || (order._id as any)}`}>
+                <a className="w-full bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-accent-foreground px-8 py-4 rounded-xl font-bold text-center transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Suivre ma commande
                 </a>
               </Link>
-
-              <Link href="/products">
-                <a className="block text-center btn-elegant">
-                  Continue Shopping
+              <Link href="/">
+                <a className="w-full border-2 border-foreground/20 hover:border-accent text-foreground px-8 py-4 rounded-xl font-bold text-center transition-all hover:scale-105 flex items-center justify-center">
+                  Continuer mes achats
                 </a>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Next Steps */}
-        <div className="bg-card border border-foreground/10 p-8 md:p-12">
-          <h2 className="text-2xl font-bold mb-6">What's Next?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="font-semibold mb-2">1. Confirmation</h3>
-              <p className="text-sm text-foreground/60">
-                You'll receive a confirmation email shortly with tracking information.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">2. Preparation</h3>
-              <p className="text-sm text-foreground/60">
-                We'll carefully prepare your order for shipment within 2-3 business days.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">3. Delivery</h3>
-              <p className="text-sm text-foreground/60">
-                Your package will be delivered within 5-7 business days. Track it anytime.
-              </p>
-            </div>
+        {/* Additional Info */}
+        <div className="max-w-4xl mx-auto mt-12 text-center">
+          <div className="bg-accent/10 border border-accent/20 rounded-xl p-6">
+            <p className="text-sm text-foreground/70">
+              <strong className="text-accent">Note:</strong> Notre équipe vérifiera votre commande et vous contactera dans les plus brefs délais pour confirmer les détails de livraison.
+            </p>
           </div>
         </div>
       </div>
