@@ -133,7 +133,7 @@ export default function AdminDashboard() {
       reader.onload = async (e) => {
         try {
           const blob = e.target?.result as ArrayBuffer;
-          const response = await fetch("/api/upload/upload", {
+          const response = await fetch("/api/upload", {
             method: "POST",
             headers: {
               "x-file-ext": ext,

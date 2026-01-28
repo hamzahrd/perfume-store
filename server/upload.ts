@@ -5,8 +5,12 @@ import { randomBytes } from "crypto";
 
 const router = express.Router();
 
-// Use environment variable or fallback to a safe default
-const uploadsDir = process.env.UPLOAD_DIR || "/var/www/perfume-store/dist/public/uploads";
+// Use environment variable or fallback to a relative path
+let uploadsDir = process.env.UPLOAD_DIR || "./dist/public/uploads";
+// Convert to absolute path if relative
+if (!path.isAbsolute(uploadsDir)) {
+  uploadsDir = path.resolve(process.cwd(), uploadsDir);
+}
 
 async function ensureUploadsDir() {
   try {

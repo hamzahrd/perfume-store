@@ -112,7 +112,7 @@ export default function OrderTracking() {
             <div>
               <p className="text-sm text-foreground/60 mb-1">Date de commande</p>
               <p className="text-lg font-semibold">
-                {new Date(order.createdAt).toLocaleDateString("fr-FR")}
+                {order.createdAt ? new Date(order.createdAt).toLocaleDateString("fr-FR") : "N/A"}
               </p>
             </div>
           </div>
