@@ -10,9 +10,9 @@ import uploadRouter from "../upload";
 const app = express();
 const server = http.createServer(app);
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware - Increase body size limit for large file uploads (50MB)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Manual CORS headers (instead of cors package)
 app.use((req, res, next) => {
