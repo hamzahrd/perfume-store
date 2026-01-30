@@ -23,8 +23,12 @@ async function ensureUploadsDir() {
 
 ensureUploadsDir();
 
-// Handle file uploads
+// Handle file uploads - Note the correct path is /upload, not /upload/upload
 router.post("/upload", async (req, res) => {
+  console.log(`[Upload] Received upload request`);
+  console.log(`[Upload] Content-Type: ${req.headers["content-type"]}`);
+  console.log(`[Upload] Content-Length: ${req.headers["content-length"]}`);
+  
   try {
     // Check if this is a multipart form data request (for image uploads)
     const contentType = req.headers["content-type"];
@@ -52,12 +56,23 @@ router.post("/upload", async (req, res) => {
 
       const buffer = Buffer.concat(chunks);
       
+      console.log(`[Upload] Received buffer size: ${buffer.length} bytes`);
+      
       // Validate file size (e.g., max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
-      if (buffer.length > maxSize) {
+      if (buffer.length === 0) {
+        console.error("[Upload] Empty buffer received");
         return res.status(400).json({ 
           success: false, 
-          error: "File too large. Maximum size is 5MB." 
+          error: "No file data received" 
+        });
+      }
+      
+      if (buffer.length > maxSize) {
+        console.error(`[Upload] File too large: ${buffer.length} bytes`);
+        return res.status(413).json({ 
+          success: false, 
+          error: `File too large. Maximum size is ${maxSize / 1024 / 1024}MB. Received: ${(buffer.length / 1024 / 1024).toFixed(2)}MB` 
         });
       }
       
@@ -66,6 +81,7 @@ router.post("/upload", async (req, res) => {
       const allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
       
       if (!allowedExtensions.includes((ext as string).toLowerCase())) {
+        console.error(`[Upload] Invalid extension: ${ext}`);
         return res.status(400).json({ 
           success: false, 
           error: "Invalid file type. Only image files are allowed." 
@@ -81,7 +97,7 @@ router.post("/upload", async (req, res) => {
       // Save file
       await fs.writeFile(filepath, buffer);
       
-      console.log(`[Upload] File saved: ${filename}`);
+      console.log(`[Upload] File saved successfully: ${filename} (${buffer.length} bytes)`);
 
       // Return relative URL
       const fileUrl = `/uploads/${filename}`;
